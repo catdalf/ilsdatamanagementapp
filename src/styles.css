@@ -1,0 +1,24 @@
+
+.custom-header-class {
+  justify-content: center !important;
+}
+
+.custom-cell-class {
+  justify-content: center !important;
+}
+.editable-cell {
+  background-color: #e6f7ff; /* Add your preferred background color for editable cells */
+  border: 1px solid #1890ff; /* Add your preferred border color for editable cells */
+  border-radius: 4px; /* Add border-radius for a rounded appearance if desired */
+}
+
+
+
+
+
+
+
+
+
+
+  

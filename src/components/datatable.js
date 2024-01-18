@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DataGrid, GridToolbar, useGridApiContext } from '@mui/x-data-grid';
+import { DataGrid, GridToolbar, useGridApiContext, GridCellModes } from '@mui/x-data-grid';
 import { Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import 'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/tailwind.css';
 import 'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/styles.css';
 import { v4 as uuidv4 } from 'uuid';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import Box from '@mui/material/Box';
 
 
 const FileUploadCell = ({ onChange }) => (
@@ -12,9 +14,11 @@ const FileUploadCell = ({ onChange }) => (
 );
 
 const DataTable = (params) => {
-  
   const [data, setData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
+  const [cellModesModel, setCellModesModel] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState('');
+
   
 
   useEffect(() => {
@@ -46,6 +50,48 @@ const DataTable = (params) => {
     console.log('Selected file:', file);
     // Handle the file as needed (e.g., upload or process the file)
   };
+  const handleCellClick = (params, event) => {
+    if (!params.isEditable) {
+      return;
+    }
+
+    setCellModesModel((prevModel) => ({
+      ...prevModel,
+      [params.id]: {
+        ...prevModel[params.id],
+        [params.field]: { mode: GridCellModes.Edit },
+      },
+    }));
+  };
+
+  const handleCellEditCommit = (params, event) => {
+    const field = params.field;
+    const newValue = event.target.value;
+
+    const updatedData = data.map((row) => {
+      if (row.id === params.id) {
+        return { ...row, [field]: newValue };
+      }
+      return row;
+    });
+
+    setData(updatedData);
+  };
+  const subcategoryOptions = {
+        'Resistor': ['Accurate, WW (RB, RBR)', 'Carbon, Var NonWW (RV)', 'Chassis Mount, WW Power (RE, RER)','Composition (RC, RCR)','Film (RL, RLR, RN, RNR, RM)','Film, Power (RD)','Film, Var NonWW (RVC)','General','Glass Glazed, Var','Lead Mount, WW Power (RW, RWR)','Lead Screw, Var WW (RT, RTR)','Network Film (RZ)','Organic Solid, Var','Power, Var WW (RP)','Precision, Var NonWW (RQ)','Precision, Var WW (RR)','Semiprec, Var WW (RA, RK)','Surface Mount','Thermistor (RTH)','Trimmer, Var NonWW (RJ, RJR)'],
+        'Capacitor': ['Air Trimmer, Variable (CT)', 'Button Mica (CB)', 'Ceramic, Variable (CV)','Chassis Mount, Elec, Alum (CU, CUR)','Chip, Ceramic (CDR)','Chip, Elec (CWR)','Chip, Silicon','Feed Through, Paper (CZ, CZR)','General Ceramic (CK, CKR)','Glass (CY, CYR)','Lead Mount, Elec, Alum (CE)','Metallized Paper-Plastic (CH, CHR)','Mica (CM, CMR)','MOS','Nonsolid, Elec, Tant (CL, CLR, CRL)','Other, Variable','Paper (CA, CP)','Paper-Plastic (CQ, CQR, CPV)','Piston, Variable (PC)','Plastic (CFR)','Solid, Elec, Tant (CSR)','Super Metallized Plastic (CRH)','Temp Compensat, Ceramic (CC, CCR)','Vacuum, Variable or Fixed (CG)'],
+        'Switching Device': ['Basic Sensitive', 'Circuit Breaker', 'Keyboard','Other','Rocker or Slide','Rotary','Thumbwheel','Toggle or Pushbutton'],
+        'Connection': ['Board with Plated Thru Holes', 'General', 'IC Socket','Other Connection','PCB Edge','SMT Interconnect Assy'],
+        'Inductor': ['Chip', 'Coil', 'Transformer'],
+        'Miscellaneous': ['Antenna, Loop', 'Antenna, Telescopic', 'Battery','Ceramic Resonator','Computer Subsystem','Crystal Resonator','Delay Line','Display','Electric Bell','Electric Cable','Ferrite Device, Microwave','Filter','Fuse','Gas Discharge Tube','Gyroscope','Heater','Incandescent Lamp','Laser','LCD','Load, Dummy or Microwave','Loudspeaker','Meter','Microphone','Microwave Element','Neon Lamp','Oscillator','Piezoelectric Sensor / Transducer','Power Module or Supply','Quartz Crystal','Quartz Filter','RF or Microwave Passive Device','Surge Arrestor','Termination','Thermal Sensitive Component','Thermal-Electric Cooler','Tube','Vibrator'],
+        'Integrated Circuit': ['Bubble Memory', 'Custom', 'EEPROM','GaAs Digital','GaAs MMIC','Linear','Logic, CGA or ASIC','Memory','Microprocessor','PAL, PLA','SAW - Surface Acoustic Wave','VHSIC/VLSI CMOS'],
+        'Semiconductor': ['Alphanumeric Display', 'Diode', 'GaAs FET','HBT','Microwave Diode','Microwave Power Transistor','Microwave Transistor','Si FET','Thyristor','Transistor','Unijunction Transistor'],
+        'Optical Device': ['Amplifier', 'Coupler / Splitter', 'Detector, Isolator, Emitter','Dispersion Compensating Module','Fiber Optic Item','Laser Diode','Laser Module','Modulator','Optical Switch','Optical Wavelength Locker','Other Optical Module or Device','Power Coupler / Divider (Tap)','Receiver Module','Transceiver','Transponder','Wavelength Division Multiplexer'],
+        'Relay': ['Automotive', 'Contactor', 'Dry Circuit','Electronic Time Delay, Non-Thermal','General Purpose','High Speed','High Voltage','Latcinhg','Low Power','Medium Power','Mercury','Polarized','Reed, Dual In Line','Sensitive','Solid State, Time Delay','Thermal, Bimetal'],
+        'Rotating Device': ['Motor', 'Other'],
+        'Software': ['217Plus Software', 'PRISM Software', 'RADC Toolkit Software'],
+        'Mechanical Part': ['Bearing', 'Belt Drive', 'Brake Friction Lining','Brush','Casing','Chain Drive','Clutch Friction Lining','Cylinder Wall','Electric Motor Base','Electric Motor Winding','Filter','Fluid Conductors','Fluid Driver','Gear','Metal Compressor Diaphragm','Miscellaneous','Piston/Cyliner','Poppet','Rubber Compressor Diaphragm','Seal, Dynamic Spring','Seal, Mechanical','Seal, Static, Gasket','Sensor/Transducer','Shaft','Sliding Action Valve, Spool','Solenoid','Spline','Spring','Stator Housing','Threaded Fastener'],
+  }
 
   
   const columnGroupingModel = [
@@ -110,8 +156,6 @@ const DataTable = (params) => {
     ]
     }
   ]
-  
-
   const columns = [
     
      
@@ -144,54 +188,37 @@ const DataTable = (params) => {
         {
           field: 'Category',
           headerName: 'Category',
-          width: 150,
+          width: 200,
           headerAlign: 'center',
           type:'singleSelect',
-          valueOptions:'',
-          renderCell: (params) => {
-           // Define your category options here
-            const categoryOptions = [
-              'Resistor',
-              'Capacitor',
-              'Switching Device',
-              'Connection',
-              'Inductor',
-              'Miscellaneous',
-              'Integrated Circuit',
-              'Semiconductor',
-              'Optical Device',
-              'Relay',
-              'Rotating Device',
-              'Software',
-              'Mechanical Part',
-            ]; // Replace with your actual categories
-            
-            return (
-              <FormControl fullWidth>
-                <InputLabel id="category-label">Select</InputLabel>
-                <Select
-                  labelId="category-label"
-                  id="category"
-                  value={params.value || ''}
-                  
-                  required
-                >
-                  {categoryOptions.map((option, index) => (
-                    <MenuItem key={index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            );
-          },
+          valueOptions: ['Resistor','Capacitor','Switching Device','Connection','Inductor','Miscellaneous','Integrated Circuit','Semiconductor','Optical Device','Relay','Rotating Device','Software','Mechanical Part'],
+          editable:true,
+          renderCell: ({ value }) => (
+            <Box
+              sx={{
+                display: "flex",
+                width: "100%",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
+            >
+              <div>{value}</div>
+              <ArrowDropDownIcon />
+            </Box>
+          ),
+          onEditCellPropsChange: (params) => {
+            if (params.cellMode === 'edit' && params.field === 'Category') {
+              setSelectedCategory(params.value);
+            }
         },
+      },
         {
           field: 'Subcategory',
           headerName: 'Subcategory',
           width: 200,
           headerAlign: 'center',
-          editable:true
+          editable:true,
+          valueOptions: subcategoryOptions[selectedCategory] || [],
         },
     
         { field: 'Subcategory_Type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:true},
@@ -207,52 +234,23 @@ const DataTable = (params) => {
           width: 220,
           headerAlign: 'center',
           type:'singleSelect',
-          valueOptions:'',
-          renderCell: (params) => {
-            const conditionEnvironmentOptions = [
-              'Ground, Benign (GB)',
-              'Ground, Fixed (GF)',
-              'Ground, Mobile (GM)',
-              'Airborne, Inhabited Cargo (AIC)',
-              'Airborne, Uninhabited Cargo (AUC)',
-              'Airborne, Inhabited Fighter (AIF)',
-              'Airborne, Uninhabited Fighter (AUF)',
-              'Airborne, Rotary Wing (ARW)',
-              'Naval, Unsheltered (NU)',
-              'Naval, Sheltered (NS)',
-              'Space, Flight (SF)',
-              'Missile, Flight (MF)',
-              'Missile, Launch (ML)',
-              'Cannon, Launch (CL)',
-            ];
-            
-            const handleSelectChange = (event) => {
-              const selectedValue = event.target.value;
-              // Handle the selected value as needed
-              console.log('Selected value:', selectedValue);
-            };
-        
-            return (
-              <FormControl fullWidth>
-                <InputLabel id="condition-environment-label">Select</InputLabel>
-                <Select
-                  labelId="condition-environment-label"
-                  id="condition_environment_info"
-                  name="condition_environment_info[]"
-                  value={params.value || ''}
-                  onChange={handleSelectChange}
-                  required
-                >
-                  <MenuItem value="">Select a condition environment</MenuItem>
-                  {conditionEnvironmentOptions.map((option, index) => (
-                    <MenuItem key={index} value={option}>
-                      {option}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            );
-          },
+          valueOptions:[
+            'Ground, Benign (GB)',
+            'Ground, Fixed (GF)',
+            'Ground, Mobile (GM)',
+            'Airborne, Inhabited Cargo (AIC)',
+            'Airborne, Uninhabited Cargo (AUC)',
+            'Airborne, Inhabited Fighter (AIF)',
+            'Airborne, Uninhabited Fighter (AUF)',
+            'Airborne, Rotary Wing (ARW)',
+            'Naval, Unsheltered (NU)',
+            'Naval, Sheltered (NS)',
+            'Space, Flight (SF)',
+            'Missile, Flight (MF)',
+            'Missile, Launch (ML)',
+            'Cannon, Launch (CL)',
+          ],
+          editable:true
         },
         
         
@@ -295,31 +293,19 @@ const DataTable = (params) => {
               toolbar: {
               showQuickFilter: true,
               },
-            }}
-            onCellEditCommit={(params, event) => {
-              const field = params.field;
-              const newValue = event.target.value;
-          
-              // Update the data with the new value
-              const updatedData = data.map((row) => {
-                if (row.id === params.id) {
-                  return { ...row, [field]: newValue };
-                }
-                return row;
-              });
-          
-              // Update the state with the new data
-              setData(updatedData);
-            }}
+            }}  
+          onCellClick={handleCellClick}
+          onCellEditCommit={handleCellEditCommit}
           rows={data}
           rowHeight={40}
           checkboxSelection
-          disableSelectionOnClick
+          disableRowSelectionOnClick
           autoPageSize
           experimentalFeatures={{ columnGrouping: true }}
           columnGroupingModel={columnGroupingModel}
           filterMode="server" // Enable filtering mode
           showCellVerticalBorder // Show vertical borders for cells
+          cellModesModel={cellModesModel}
           
           sx={{
             '&  .MuiDataGrid-columnSeparator': {

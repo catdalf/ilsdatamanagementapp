@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { DataGrid, GridToolbar, useGridApiContext, GridCellModes } from '@mui/x-data-grid';
 import { Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import 'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/tailwind.css';
-import 'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/styles.css';
-import { v4 as uuidv4 } from 'uuid';
+import 'C:/Users/eren.buldum/ilsdatamanagementapp/src/tailwind.css';
+import 'C:/Users/eren.buldum/ilsdatamanagementapp/src/styles.css';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Box from '@mui/material/Box';
 
@@ -17,8 +16,9 @@ const DataTable = (params) => {
   const [data, setData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
   const [cellModesModel, setCellModesModel] = useState({});
-  const [selectedCategory, setSelectedCategory] = useState('');
-
+  
+ 
+  
   
 
   useEffect(() => {
@@ -38,7 +38,9 @@ const DataTable = (params) => {
 
   const addRow = () => {
     const newRow = {
-      id: uuidv4(), // Generate a unique ID for the new row
+      id: rowCount,
+      Category:'',
+      Subcategory:'', // Generate a unique ID for the new row
       // Define other properties for the new row here...
     };
     setData((prevData) => [...prevData, newRow]);
@@ -64,17 +66,20 @@ const DataTable = (params) => {
     }));
   };
 
-  const handleCellEditCommit = (params, event) => {
-    const field = params.field;
-    const newValue = event.target.value;
 
+
+
+
+  const handleCellEditCommit = (params) => {
+    const field = params.field;
+    const newValue = params.value === undefined ? '' : params.value;
     const updatedData = data.map((row) => {
       if (row.id === params.id) {
         return { ...row, [field]: newValue };
       }
       return row;
     });
-
+  
     setData(updatedData);
   };
   const subcategoryOptions = {
@@ -156,8 +161,11 @@ const DataTable = (params) => {
     ]
     }
   ]
+
   const columns = [
     
+
+
      
         { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:true},
         { field: 'part_number', headerName: 'Part Number', width: 150,headerAlign:'center', editable:true },
@@ -184,7 +192,7 @@ const DataTable = (params) => {
       
     
     
-      
+        
         {
           field: 'Category',
           headerName: 'Category',
@@ -206,11 +214,6 @@ const DataTable = (params) => {
               <ArrowDropDownIcon />
             </Box>
           ),
-          onEditCellPropsChange: (params) => {
-            if (params.cellMode === 'edit' && params.field === 'Category') {
-              setSelectedCategory(params.value);
-            }
-        },
       },
         {
           field: 'Subcategory',
@@ -218,7 +221,20 @@ const DataTable = (params) => {
           width: 200,
           headerAlign: 'center',
           editable:true,
-          valueOptions: subcategoryOptions[selectedCategory] || [],
+          type: 'singleSelect',
+          renderCell: ({ value }) => (
+            <Box
+              sx={{
+                display: "flex",
+                width: "100%",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
+            >
+              <div>{value}</div>
+              <ArrowDropDownIcon />
+            </Box>
+          ),
         },
     
         { field: 'Subcategory_Type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:true},
@@ -250,7 +266,20 @@ const DataTable = (params) => {
             'Missile, Launch (ML)',
             'Cannon, Launch (CL)',
           ],
-          editable:true
+          editable:true,
+          renderCell: ({ value }) => (
+            <Box
+              sx={{
+                display: "flex",
+                width: "100%",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}
+            >
+              <div>{value}</div>
+              <ArrowDropDownIcon />
+            </Box>
+          ),
         },
         
         
@@ -307,6 +336,7 @@ const DataTable = (params) => {
           showCellVerticalBorder // Show vertical borders for cells
           cellModesModel={cellModesModel}
           
+
           sx={{
             '&  .MuiDataGrid-columnSeparator': {
               color:'gray', // Change this to your desired color

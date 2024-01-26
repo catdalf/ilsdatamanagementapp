@@ -3,7 +3,7 @@ import DataTable from './components/datatable'; // Update the path relative to y
 import Sidebar from './components/sidebar'; // Update the path relative to your project structure
 import Home from './components/home'; // Update the path relative to your project structure
 import './tailwind.css';
-import 'C:/Users/eren.buldum/ilsdatamanagementapp/src/styles.css';
+import './styles.css';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('Home');

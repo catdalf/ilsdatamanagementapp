@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
 
 .custom-header-class {
   justify-content: center !important;
@@ -11,7 +12,17 @@
   border: 1px solid #1890ff; /* Add your preferred border color for editable cells */
   border-radius: 4px; /* Add border-radius for a rounded appearance if desired */
 }
-
+.MuiDataGrid-toolbarContainer button {
+  font-family: 'Montserrat', sans-serif !important;
+  color:'gray'
+}
+.MuiDatagrid-toolbarContainer input {
+  font-family: 'Montserrat', sans-serif !important;
+  color:'gray'
+}
+.my-header-class {
+  font-family: 'Montserrat', sans-serif !important;
+}
 
 
 

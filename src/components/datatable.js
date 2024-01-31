@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DataGrid, GridToolbar, useGridApiContext, GridCellModes, GridEditSingleSelectCell, GridCellEditStopReasons } from '@mui/x-data-grid';
-import { Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { DataGrid, GridToolbar, useGridApiContext, GridCellEditStopReasons, GridCellModes} from '@mui/x-data-grid';
+import { Button } from '@mui/material';
 import 'C:/Users/eren.buldum/ilsdatamanagementapp/src/tailwind.css';
 import 'C:/Users/eren.buldum/ilsdatamanagementapp/src/styles.css';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -12,6 +13,7 @@ import Paper from '@mui/material/Paper';
 
 
 
+
 const FileUploadCell = ({ onChange }) => (
   <input type="file" onChange={onChange} accept=".pdf, .doc, .docx, .xls, .xlsx, .csv" required />
 );
@@ -19,7 +21,8 @@ const FileUploadCell = ({ onChange }) => (
 const DataTable = (params) => {
   const [data, setData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
-  const [cellModesModel, setCellModesModel] = useState({});
+  
+ 
  
 
   useEffect(() => {
@@ -39,6 +42,64 @@ const DataTable = (params) => {
     return !!event.key;
   }
 
+
+
+//Code to make cells editable with one click
+const [cellModesModel, setCellModesModel] = React.useState({});
+
+  const handleCellClick = React.useCallback((params, event) => {
+    if (!params.isEditable) {
+      return;
+    }
+
+    // Ignore portal
+    if (event.target.nodeType === 1 && !event.currentTarget.contains(event.target)) {
+      return;
+    }
+
+    setCellModesModel((prevModel) => {
+      return {
+        // Revert the mode of the other cells from other rows
+        ...Object.keys(prevModel).reduce(
+          (acc, id) => ({
+            ...acc,
+            [id]: Object.keys(prevModel[id]).reduce(
+              (acc2, field) => ({
+                ...acc2,
+                [field]: { mode: GridCellModes.View },
+              }),
+              {},
+            ),
+          }),
+          {},
+        ),
+        [params.id]: {
+          // Revert the mode of other cells in the same row
+          ...Object.keys(prevModel[params.id] || {}).reduce(
+            (acc, field) => ({ ...acc, [field]: { mode: GridCellModes.View } }),
+            {},
+          ),
+          [params.field]: { mode: GridCellModes.Edit },
+        },
+      };
+    });
+  }, []);
+
+  const handleCellModesModelChange = React.useCallback((newModel) => {
+    setCellModesModel(newModel);
+  }, []);
+//Code to make cells editable with one click ends here
+
+
+//Here is the code to change the value of cells under the Failure_Rate_Type column according to the value of the MTBF_Value column:
+  const processRowUpdate = (params) => {
+    if ('MTBF_Value' in params) {
+      params.Failure_Rate_Type = params.MTBF_Value ? 'Specified, MTBF' : 'Calculated';
+    }
+    return params;
+  };
+  
+  
 
 
   //Purpose of EditTextArea is to make the cell editable with a pop-up window
@@ -130,6 +191,9 @@ const DataTable = (params) => {
     console.log('Selected file:', file);
     // Handle the file as needed (e.g., upload or process the file)
   };
+
+  
+
 
   
   
@@ -276,7 +340,7 @@ const DataTable = (params) => {
               'Software': ['217Plus Software', 'PRISM Software', 'RADC Toolkit Software'],
               'Mechanical Part': ['Bearing', 'Belt Drive', 'Brake Friction Lining','Brush','Casing','Chain Drive','Clutch Friction Lining','Cylinder Wall','Electric Motor Base','Electric Motor Winding','Filter','Fluid Conductors','Fluid Driver','Gear','Metal Compressor Diaphragm','Miscellaneous','Piston/Cyliner','Poppet','Rubber Compressor Diaphragm','Seal, Dynamic Spring','Seal, Mechanical','Seal, Static, Gasket','Sensor/Transducer','Shaft','Sliding Action Valve, Spool','Solenoid','Spline','Spring','Stator Housing','Threaded Fastener'],
         };
-            const options = subcategoryOptions[row.Category];
+            
             
             return subcategoryOptions[row.Category] || [];
 
@@ -307,8 +371,9 @@ const DataTable = (params) => {
 
         {
           field: 'Condition_Environment_Info',
+        
           headerName: 'Condition Environment Info',
-          width: 220,
+          width: 250,
           headerAlign: 'center',
           type:'singleSelect',
           valueOptions:[
@@ -341,6 +406,7 @@ const DataTable = (params) => {
               <ArrowDropDownIcon />
             </Box>
           ),
+          
         },
         
         
@@ -352,12 +418,12 @@ const DataTable = (params) => {
       
         { field: 'MTBF', headerName: 'MTBF', width: 120 ,headerAlign:'center', editable:true},
         { field: 'Failure_Rate', headerName: 'Failure Rate', width: 150 ,headerAlign:'center', editable:true},
-        { field: 'Failure_Rate_Type', headerName: 'Failure Rate Type', width: 180 ,headerAlign:'center'},
+        { field: 'Failure_Rate_Type', headerName: 'Failure Rate Type', width: 180 ,headerAlign:'center',editable:false},
       
       
         { field: 'Failure_Mode', headerName: 'Failure Mode', width: 120 ,headerAlign:'center', editable:true, ...multilineColumn },
         { field: 'Failure_Cause', headerName: 'Failure Cause', width: 150 ,headerAlign:'center', editable:true},
-        { field: 'Failure_Mode_Ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:true},
+        { field: 'Failure_Mode_Ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:true, ...multilineColumn},
         {
         field: 'Related_Documents',
         headerName: 'Related Documents',
@@ -370,15 +436,18 @@ const DataTable = (params) => {
   ];
 
   return (
+  
     <div>
-      <Button variant="contained" onClick={addRow}>
+      <Button variant="contained" onClick={addRow} style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif"}} >
         Add Row
       </Button>
 
       <div className="h-96 w-full bg-white shadow-md rounded-lg overflow-hidden">
         <DataGrid
+        
           columns={columns}
           slots={{ toolbar: GridToolbar }}
+          
             slotProps={{
               toolbar: {
               showQuickFilter: true,
@@ -392,7 +461,11 @@ const DataTable = (params) => {
               event.defaultMuiPrevented = true;
             }
           }}
-          rows={data}
+          cellModesModel={cellModesModel}
+          onCellModesModelChange={handleCellModesModelChange}
+          onCellClick={handleCellClick}
+          processRowUpdate={processRowUpdate}
+          rows={data}         
           rowHeight={40}
           checkboxSelection
           disableRowSelectionOnClick
@@ -402,19 +475,34 @@ const DataTable = (params) => {
           filterMode="server" // Enable filtering mode
           showCellVerticalBorder // Show vertical borders for cells
           
+
+
+
+
           sx={{
             '&  .MuiDataGrid-columnSeparator': {
-              color:'gray', // Change this to your desired color
+              color:'#724585', // Change this to your desired color
               visibility:'visible',
-              height:1
-          
+              height:1,
+              
+            },
+            '& .MuiDataGrid-toolbarContainer button': {
+              color:'purple',
+
+
+            },
+            '& .MuiDataGrid-toolbarContainer input': {
+            
+            
             },
           }}
           
-          
+        
         />
+       
       </div>
     </div>
+  
   );
   
 };

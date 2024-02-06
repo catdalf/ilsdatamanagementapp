@@ -10,12 +10,13 @@ import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Popper from '@mui/material/Popper';
 import Paper from '@mui/material/Paper';
+import { ReadMoreRounded } from '@mui/icons-material';
 
 
 
 
-const FileUploadCell = ({ onChange }) => (
-  <input type="file" onChange={onChange} accept=".pdf, .doc, .docx, .xls, .xlsx, .csv" required />
+const FileUploadCell = ({ onChange, field }) => (
+  <input type="file" onChange={onChange} name= {field} accept=".pdf, .doc, .docx, .xls, .xlsx, .csv" required />
 );
 
 const DataTable = (params) => {
@@ -99,8 +100,6 @@ const [cellModesModel, setCellModesModel] = React.useState({});
     return params;
   };
   
-  
-
 
   //Purpose of EditTextArea is to make the cell editable with a pop-up window
   //This is a custom component for the DataGrid
@@ -175,27 +174,106 @@ const [cellModesModel, setCellModesModel] = React.useState({});
 
   const addRow = () => {
     const newRow = {
-      
       id: rowCount,
-      Category:'',
-      Subcategory:'', // Generate a unique ID for the new row
-      // Define other properties for the new row here...
+      part_name: '',
+      part_number: '',
+      BILGEM_Part_Number: '',
+      Manufacturer: '',
+      Datasheet: '',
+      Description: '',
+      Stock_Information: '',
+      Category: '',
+      Subcategory: '',
+      Subcategory_Type: '',
+      MTBF_Value: '',
+      Condition_Environment_Info: '',
+      Condition_Confidence_Level: '',
+      Condition_Temperature_Value: '',
+      Finishing_Material: '',
+      MTBF: '',
+      Failure_Rate: '',
+      Failure_Rate_Type: '',
+      Failure_Mode: '',
+      Failure_Cause: '',
+      Failure_Mode_Ratio: '',
+      Related_Documents: '',
     };
     console.log('New row:', newRow)
     setData((prevData) => [...prevData, newRow]);
     setRowCount((prevCount) => prevCount + 1); // Increment the counter
   };
+  const saveRow = (row) => {
+    console.log('Saving row', row);
+    // Validation of all of the fields are filled
+    if (
+        !row.id ||
+        !row.part_name ||
+        !row.part_number ||
+        !row.BILGEM_Part_Number ||
+        !row.Manufacturer ||
+        !row.Datasheet ||
+        !row.Description ||
+        !row.Stock_Information ||
+        !row.Category ||
+        !row.Subcategory ||
+        !row.Subcategory_Type ||
+        !row.MTBF_Value ||
+        !row.Condition_Environment_Info ||
+        !row.Condition_Confidence_Level ||
+        !row.Condition_Temperature_Value ||
+        !row.Finishing_Material ||
+        !row.MTBF ||
+        !row.Failure_Rate ||
+        !row.Failure_Rate_Type ||
+        !row.Failure_Mode ||
+        !row.Failure_Cause ||
+        !row.Failure_Mode_Ratio ||
+        !row.Related_Documents
+    ) {
+        alert('Please fill all of the fields!');
+        return;
+    }
 
+    fetch('http://localhost:5000/add_row', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(row),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.error) {
+                alert('Failed to save row:' + data.error);
+            } else {
+                alert('Row saved successfully!');
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+};
+
+
+      
   const handleFileChange = (event) => {
     const file = event.target.files[0];
+    const reader = new FileReader();
     console.log('Selected file:', file);
+
+    reader.onloadend = () => {
+      setRowCount(prevState => ({
+        ...prevState,
+        [event.target.name]: reader.result
+      }));
+    };
     // Handle the file as needed (e.g., upload or process the file)
+    ReadMoreRounded.onloadend = () => {
+      console.log('Result:', reader.result)
+    
   };
-
-  
-
-
-  
+  reader.readAsDataURL(file);
+};
   
   const columnGroupingModel = [
     {
@@ -257,6 +335,12 @@ const [cellModesModel, setCellModesModel] = React.useState({});
       
       
     ]
+    },
+    {
+      groupId:'Action Buttons',
+      headerAlign:'center',
+      description:'',
+      children:[{field:'save'}]
     }
   ]
 
@@ -271,7 +355,7 @@ const [cellModesModel, setCellModesModel] = React.useState({});
           headerName: 'Datasheet',
           width: 150,
           headerAlign: 'center',
-          renderCell: (params) => <FileUploadCell onChange={handleFileChange} />,
+          renderCell: (params) => <FileUploadCell field={params.field} onChange={handleFileChange} />,
         },
 
 
@@ -320,7 +404,7 @@ const [cellModesModel, setCellModesModel] = React.useState({});
           editable:true,
           type: 'singleSelect',
           valueOptions: ({row}) => {
-            console.log('row:',row);
+            
             
             if (!row) {
               return [];
@@ -429,7 +513,31 @@ const [cellModesModel, setCellModesModel] = React.useState({});
         headerName: 'Related Documents',
         width: 150,
         headerAlign: 'center',
-        renderCell: (params) => <FileUploadCell onChange={handleFileChange} />,
+        renderCell: (params) => <FileUploadCell field ={params.field} onChange={handleFileChange} />,
+      },
+      {
+        field: 'save',
+        headerName: 'Save',
+        headerAlign: 'center',
+        fontFamily:"'Montserrat', sans-serif",
+        sortable: false,
+        width: 150,
+        renderCell: (params) => (
+        
+          
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={() => saveRow(params.row)}
+           
+          style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+          >
+            Save
+          </Button>
+       
+        ),
+        
       },
     
     // Add other column groups in a similar structure
@@ -438,7 +546,7 @@ const [cellModesModel, setCellModesModel] = React.useState({});
   return (
   
     <div>
-      <Button variant="contained" onClick={addRow} style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif"}} >
+      <Button variant="contained" onClick={addRow} style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", }} >
         Add Row
       </Button>
 
@@ -468,18 +576,18 @@ const [cellModesModel, setCellModesModel] = React.useState({});
           rows={data}         
           rowHeight={40}
           checkboxSelection
+          pageSizeOptions={[5, 10, 20, 50, 100]}
           disableRowSelectionOnClick
+          
           autoPageSize
           experimentalFeatures={{ columnGrouping: true }}
           columnGroupingModel={columnGroupingModel}
           filterMode="server" // Enable filtering mode
           showCellVerticalBorder // Show vertical borders for cells
           
-
-
-
-
+        
           sx={{
+            
             '&  .MuiDataGrid-columnSeparator': {
               color:'#724585', // Change this to your desired color
               visibility:'visible',

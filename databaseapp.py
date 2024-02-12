@@ -1,13 +1,12 @@
-from flask import Flask,jsonify, make_response,request, send_file
+from flask import Flask,jsonify,request
 import psycopg2
 from flask_cors import CORS
-import base64
-import io
-db_name = 'Failures'
-db_user = 'postgres'
-db_password = 'timberlaker.67'
-db_host = 'localhost'  
-db_port = '5432'  
+
+dbname = 'Failures'
+user = 'postgres'
+password = 'timberlaker.67'
+host = 'localhost'  
+port = '5432'  
 app = Flask(__name__)
 CORS(app)
 
@@ -15,11 +14,11 @@ CORS(app)
 def get_data():
     try:
         conn = psycopg2.connect(
-            dbname=db_name,
-            user=db_user,
-            password=db_password,
-            host=db_host,
-            port=db_port
+            dbname='Failures',
+            user='postgres',
+            password='timberlaker.67',
+            host='localhost',
+            port='5432'
         )
         cursor = conn.cursor()
 
@@ -42,10 +41,21 @@ def get_data():
 
         data = cursor.fetchall()
 
-        
-
         keys = [desc[0] for desc in cursor.description]
-        data_dict = [dict(zip(keys, row)) for row in data]
+        data_dict = []
+
+        for row in data:
+            row_dict = dict(zip(keys, row))
+            
+            # Convert memoryview to bytes for Datasheet
+            if isinstance(row_dict['Datasheet'], memoryview):
+                row_dict['Datasheet'] = row_dict['Datasheet'].tobytes()
+            
+            # Convert memoryview to bytes for related_documents
+            if isinstance(row_dict['related_documents'], memoryview):
+                row_dict['related_documents'] = row_dict['related_documents'].tobytes()
+            
+            data_dict.append(row_dict)
 
         cursor.close()
         conn.close()
@@ -64,22 +74,27 @@ def add_row():
     print('Received data:',data)
 
     # Validate the data: check that all fields are present
-    fields = ['part_name', 'part_number', 'BILGEM_Part_Number', 'Manufacturer', 'Datasheet', 'Description', 'Stock_Information', 'Category', 'Subcategory', 'Subcategory_Type', 'Remarks', 'MTBF_Value', 'Condition_Environment_Info', 'Condition_Confidence_Level', 'Condition_Temperature_Value', 'Finishing_Material', 'MTBF', 'Failure_Rate', 'Failure_Rate_Type', 'Failure_Mode', 'Failure_Cause', 'Failure_Mode_Ratio', 'Related_Documents']
+    fields = ['part_name', 'part_number', 'BILGEM_Part_Number', 'Manufacturer', 'Description', 'Stock_Information', 'Category', 'Subcategory', 'Subcategory_Type', 'Remarks', 'MTBF_Value', 'Condition_Environment_Info', 'Condition_Confidence_Level', 'Condition_Temperature_Value', 'Finishing_Material', 'MTBF', 'Failure_Rate', 'Failure_Rate_Type', 'Failure_Mode', 'Failure_Cause', 'Failure_Mode_Ratio']
     if not all(key in data for key in fields):
         return jsonify({'error': 'Missing data'}), 400
 
-    datasheet_file = request.files['Datasheet'].read()
-    related_documents_file = request.files['Related_Documents'].read()
+    if 'Datasheet' not in request.files or 'Related_Documents' not in request.files:
+        return jsonify({'error': 'Missing files'}), 400
 
+    datasheet_file = request.files['Datasheet']
+    related_documents_file = request.files['Related_Documents']
+
+    datasheet_data = datasheet_file.read()
+    related_documents_data = related_documents_file.read()
 
 
     try:
         conn = psycopg2.connect(
-            db_name = 'Failures',
-            db_user = 'postgres',
-            db_password = 'timberlaker.67',
-            db_host = 'localhost',
-            db_port = '5432'  
+            dbname = 'Failures',
+            user = 'postgres',
+            password = 'timberlaker.67',
+            host = 'localhost',
+            port = '5432'  
         )
         cursor = conn.cursor()
 
@@ -87,7 +102,7 @@ def add_row():
         cursor.execute("""
         INSERT INTO PartIdentification (part_name, part_number, BILGEM_Part_Number, Manufacturer, Datasheet, Description, Stock_Information)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (data['part_name'], data['part_number'], data['BILGEM_Part_Number'], data['Manufacturer'], datasheet_file, data['Description'], data['Stock_Information']))
+        """, (data['part_name'], data['part_number'], data['BILGEM_Part_Number'], data['Manufacturer'],psycopg2.Binary(datasheet_data), data['Description'], data['Stock_Information']))
 
         cursor.execute("""
         INSERT INTO PartCategorization (part_number, category, subcategory, subcategory_type, remarks)
@@ -112,8 +127,7 @@ def add_row():
         cursor.execute("""
         INSERT INTO Documents (part_number, related_documents)
         VALUES (%s, %s)
-        """, (data['part_number'], related_documents_file.read()))
-
+        """, (data['part_number'], psycopg2.Binary(related_documents_data)))
 
 
                        

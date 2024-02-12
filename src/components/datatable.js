@@ -10,20 +10,13 @@ import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Popper from '@mui/material/Popper';
 import Paper from '@mui/material/Paper';
-import { ReadMoreRounded } from '@mui/icons-material';
 
 
-
-
-const FileUploadCell = ({ onChange, field }) => (
-  <input type="file" onChange={onChange} name= {field} accept=".pdf, .doc, .docx, .xls, .xlsx, .csv" required />
-);
 
 const DataTable = (params) => {
   const [data, setData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
   
- 
  
 
   useEffect(() => {
@@ -204,14 +197,15 @@ const [cellModesModel, setCellModesModel] = React.useState({});
   };
   const saveRow = (row) => {
     console.log('Saving row', row);
+    
     // Validation of all of the fields are filled
     if (
-        !row.id ||
+        (row.id === null || row.id === undefined) ||
         !row.part_name ||
         !row.part_number ||
         !row.BILGEM_Part_Number ||
         !row.Manufacturer ||
-        !row.Datasheet ||
+        !(row.Datasheet instanceof File) ||
         !row.Description ||
         !row.Stock_Information ||
         !row.Category ||
@@ -228,18 +222,23 @@ const [cellModesModel, setCellModesModel] = React.useState({});
         !row.Failure_Mode ||
         !row.Failure_Cause ||
         !row.Failure_Mode_Ratio ||
-        !row.Related_Documents
+        !(row.Related_Documents instanceof File)
     ) {
         alert('Please fill all of the fields!');
         return;
     }
-
+  const formData = new FormData();
+  for (const key in row) {
+    if (key === 'Datasheet' || key === 'Related_Documents') {
+      
+      formData.append(key, row[key]);
+    } else {
+      formData.append(key, row[key]);
+    }
+  }
     fetch('http://localhost:5000/add_row', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(row),
+        body: formData,
     })
         .then((response) => response.json())
         .then((data) => {
@@ -247,34 +246,30 @@ const [cellModesModel, setCellModesModel] = React.useState({});
                 alert('Failed to save row:' + data.error);
             } else {
                 alert('Row saved successfully!');
+                return fetch('http://localhost:5000/get_data_from_database')
             }
         })
+        .then((response) => response.json())
+        .then((data) => {
+        // Update your state with the new data
+        this.setState({ data: data });
+})
         .catch((error) => {
             console.error('Error:', error);
         });
 };
 
 
-      
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    console.log('Selected file:', file);
 
-    reader.onloadend = () => {
-      setRowCount(prevState => ({
-        ...prevState,
-        [event.target.name]: reader.result
-      }));
-    };
-    // Handle the file as needed (e.g., upload or process the file)
-    ReadMoreRounded.onloadend = () => {
-      console.log('Result:', reader.result)
-    
-  };
-  reader.readAsDataURL(file);
+      
+const handleFileChange = (event, params, field) => {
+  event.persist();
+  const file = event.target.files[0];
+  console.log('File changed:', file);
+
+  // Update the row data with the file object
+  params.api.updateRows([{ id: params.id, [field]: file }]);
 };
-  
   const columnGroupingModel = [
     {
       groupId:'Part Identification',
@@ -355,13 +350,24 @@ const [cellModesModel, setCellModesModel] = React.useState({});
           headerName: 'Datasheet',
           width: 150,
           headerAlign: 'center',
-          renderCell: (params) => <FileUploadCell field={params.field} onChange={handleFileChange} />,
+          renderCell: (params) => {
+            return (
+              <input
+                type="file"
+                onChange={(event) => handleFileChange(event, params, 'Datasheet')}
+                name="Datasheet"
+                accept=".pdf, .doc, .docx, .xls, .xlsx, .csv"
+                required
+              />
+            );
+          },
         },
 
 
         {
           field: 'Description',
           headerName: 'Description',
+          description: '',
           width: 150,
           headerAlign: 'center',
           editable:true,
@@ -509,12 +515,22 @@ const [cellModesModel, setCellModesModel] = React.useState({});
         { field: 'Failure_Cause', headerName: 'Failure Cause', width: 150 ,headerAlign:'center', editable:true},
         { field: 'Failure_Mode_Ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:true, ...multilineColumn},
         {
-        field: 'Related_Documents',
-        headerName: 'Related Documents',
-        width: 150,
-        headerAlign: 'center',
-        renderCell: (params) => <FileUploadCell field ={params.field} onChange={handleFileChange} />,
-      },
+          field: 'Related_Documents',
+          headerName: 'Related Documents',
+          width: 150,
+          headerAlign: 'center',
+          renderCell: (params) => {
+            return (
+              <input
+                type="file"
+                onChange={(event) => handleFileChange(event, params, 'Related_Documents')}
+                name="Related_Documents"
+                accept=".pdf, .doc, .docx, .xls, .xlsx, .csv"
+                required
+              />
+            );
+          },
+        },
       {
         field: 'save',
         headerName: 'Save',

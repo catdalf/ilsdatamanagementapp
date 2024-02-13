@@ -25,7 +25,7 @@ const DataTable = (params) => {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/get_data_from_database');
+      const response = await axios.get('http://localhost:5000/get_data_from_database', { withCredentials: true });
       const rowsWithIds = response.data.map(row => ({ id: row.part_number, ...row }));
       setData(rowsWithIds);
     } catch (error) {
@@ -278,21 +278,21 @@ const handleFileChange = (event, params, field) => {
       description:'',
       children:[{field:'part_name'},
       {field:'part_number'},
-      {field:'BILGEM_Part_Number'},
-      {field:'Manufacturer'},
-      {field:'Datasheet'},
-      {field:'Description'},
-      {field:'Stock_Information'}
+      {field:'bilgem_part_number'},
+      {field:'manufacturer'},
+      {field:'datasheet'},
+      {field:'description'},
+      {field:'stock_information'}
     ]
     },
     {
       groupId:'Part Categorization',
       headerAlign:'center',
       description:'',
-      children:[{field:'Category'},
-      {field:'Subcategory'},
-      {field:'Subcategory_Type'},
-      {field:'Remarks'}
+      children:[{field:'category'},
+      {field:'subcategory'},
+      {field:'subcategory_type'},
+      {field:'remarks'}
       
     ]
     },
@@ -300,11 +300,11 @@ const handleFileChange = (event, params, field) => {
       groupId:'Manufacturer Information',
       headerAlign:'center',
       description:'',
-      children:[{field:'MTBF_Value'},
-      {field:'Condition_Environment_Info'},
-      {field:'Condition_Confidence_Level'},
-      {field:'Condition_Temperature_Value'},
-      {field:'Finishing_Material'}
+      children:[{field:'mtbf_value'},
+      {field:'condition_environment_info'},
+      {field:'condition_confidence_level'},
+      {field:'condition_temperature_value'},
+      {field:'finishing_material'}
       
     ]
     },
@@ -312,9 +312,9 @@ const handleFileChange = (event, params, field) => {
       groupId:'Reliability Parameters',
       headerAlign:'center',
       description:'',
-      children:[{field:'MTBF'},
-      {field:'Failure_Rate'},
-      {field:'Failure_Rate_Type'},
+      children:[{field:'mtbf'},
+      {field:'failure_rate'},
+      {field:'failure_rate_type'},
       
       
     ]
@@ -323,10 +323,10 @@ const handleFileChange = (event, params, field) => {
       groupId:'Failure Information',
       headerAlign:'center',
       description:'',
-      children:[{field:'Failure_Mode'},
-      {field:'Failure_Cause'},
-      {field:'Failure_Mode_Ratio'},
-      {field:'Related_Documents'},
+      children:[{field:'failure_mode'},
+      {field:'failure_cause'},
+      {field:'failure_mode_ratio'},
+      {field:'related_documents'},
       
       
     ]
@@ -343,10 +343,10 @@ const handleFileChange = (event, params, field) => {
         
         { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:true},
         { field: 'part_number', headerName: 'Part Number', width: 150,headerAlign:'center', editable:true },
-        { field: 'BILGEM_Part_Number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:true },
-        { field: 'Manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true },
+        { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:true },
+        { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true },
         {
-          field: 'Datasheet',
+          field: 'datasheet',
           headerName: 'Datasheet',
           width: 150,
           headerAlign: 'center',
@@ -365,7 +365,7 @@ const handleFileChange = (event, params, field) => {
 
 
         {
-          field: 'Description',
+          field: 'description',
           headerName: 'Description',
           description: '',
           width: 150,
@@ -373,14 +373,14 @@ const handleFileChange = (event, params, field) => {
           editable:true,
         },
         
-        { field: 'Stock_Information',
+        { field: 'stock_information',
          headerName: 'Stock Information',
           width: 180,
           headerAlign:'center',
           editable:true },
       
         {
-          field: 'Category',
+          field: 'category',
           headerName: 'Category',
           width: 200,
           headerAlign: 'center',
@@ -403,7 +403,7 @@ const handleFileChange = (event, params, field) => {
           ),
       },
         {
-          field: 'Subcategory',
+          field: 'subcategory',
           headerName: 'Subcategory',
           width: 200,
           headerAlign: 'center',
@@ -452,15 +452,15 @@ const handleFileChange = (event, params, field) => {
           ),
         },
     
-        { field: 'Subcategory_Type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:true},
-        { field: 'Remarks', headerName: 'Remarks', width: 150,headerAlign:'center', editable:true },
+        { field: 'subcategory_type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:true},
+        { field: 'remarks', headerName: 'Remarks', width: 150,headerAlign:'center', editable:true },
 
 
 
-        { field: 'MTBF_Value', headerName: 'MTBF Value', width: 150,headerAlign:'center',editable:true},
+        { field: 'mtbf_value', headerName: 'MTBF Value', width: 150,headerAlign:'center',editable:true},
 
         {
-          field: 'Condition_Environment_Info',
+          field: 'condition_environment_info',
         
           headerName: 'Condition Environment Info',
           width: 250,
@@ -501,21 +501,21 @@ const handleFileChange = (event, params, field) => {
         
         
         
-        { field: 'Condition_Confidence_Level', headerName: 'Condition Confidence Level', width: 220 ,headerAlign:'center', editable:true},
-        { field: 'Condition_Temperature_Value', headerName: 'Condition Temperature Value', width: 240,headerAlign:'center', editable:true },
-        { field: 'Finishing_Material', headerName: 'Finishing Material', width: 180,headerAlign:'center', editable:true },
+        { field: 'condition_confidence_level', headerName: 'Condition Confidence Level', width: 220 ,headerAlign:'center', editable:true},
+        { field: 'condition_temperature_value', headerName: 'Condition Temperature Value', width: 240,headerAlign:'center', editable:true },
+        { field: 'finishing_material', headerName: 'Finishing Material', width: 180,headerAlign:'center', editable:true },
       
       
-        { field: 'MTBF', headerName: 'MTBF', width: 120 ,headerAlign:'center', editable:true},
-        { field: 'Failure_Rate', headerName: 'Failure Rate', width: 150 ,headerAlign:'center', editable:true},
-        { field: 'Failure_Rate_Type', headerName: 'Failure Rate Type', width: 180 ,headerAlign:'center',editable:false},
+        { field: 'mtbf', headerName: 'MTBF', width: 120 ,headerAlign:'center', editable:true},
+        { field: 'failure_rate', headerName: 'Failure Rate', width: 150 ,headerAlign:'center', editable:true},
+        { field: 'failure_rate_type', headerName: 'Failure Rate Type', width: 180 ,headerAlign:'center',editable:false},
       
       
-        { field: 'Failure_Mode', headerName: 'Failure Mode', width: 120 ,headerAlign:'center', editable:true, ...multilineColumn },
-        { field: 'Failure_Cause', headerName: 'Failure Cause', width: 150 ,headerAlign:'center', editable:true},
-        { field: 'Failure_Mode_Ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:true, ...multilineColumn},
+        { field: 'failure_mode', headerName: 'Failure Mode', width: 120 ,headerAlign:'center', editable:true, ...multilineColumn },
+        { field: 'failure_cause', headerName: 'Failure Cause', width: 150 ,headerAlign:'center', editable:true},
+        { field: 'failure_mode_ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:true, ...multilineColumn},
         {
-          field: 'Related_Documents',
+          field: 'related_documents',
           headerName: 'Related Documents',
           width: 150,
           headerAlign: 'center',

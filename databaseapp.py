@@ -1,6 +1,9 @@
 from flask import Flask,jsonify,request
 import psycopg2
 from flask_cors import CORS
+import base64
+
+
 
 dbname = 'Failures'
 user = 'postgres'
@@ -8,7 +11,10 @@ password = 'timberlaker.67'
 host = 'localhost'  
 port = '5432'  
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
+
+
+
 
 @app.route('/get_data_from_database', methods=['GET'])
 def get_data():
@@ -46,14 +52,14 @@ def get_data():
 
         for row in data:
             row_dict = dict(zip(keys, row))
-            
+            print("Keys:", keys)
             # Convert memoryview to bytes for Datasheet
-            if isinstance(row_dict['Datasheet'], memoryview):
-                row_dict['Datasheet'] = row_dict['Datasheet'].tobytes()
-            
+            if isinstance(row_dict['datasheet'], memoryview):
+                row_dict['datasheet'] = base64.b64encode(row_dict['datasheet']).decode('utf-8')
+
             # Convert memoryview to bytes for related_documents
             if isinstance(row_dict['related_documents'], memoryview):
-                row_dict['related_documents'] = row_dict['related_documents'].tobytes()
+                row_dict['related_documents'] = base64.b64encode(row_dict['related_documents']).decode('utf-8')
             
             data_dict.append(row_dict)
 

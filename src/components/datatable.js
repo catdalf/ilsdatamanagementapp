@@ -10,8 +10,8 @@ import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
 import Popper from '@mui/material/Popper';
 import Paper from '@mui/material/Paper';
-
-
+import SaveIcon from '@mui/icons-material/Save';
+import DeleteIcon from '@mui/icons-material/Cancel';
 
 const DataTable = (params) => {
   const [data, setData] = useState([]);
@@ -23,20 +23,18 @@ const DataTable = (params) => {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (filterValue = '') => {
     try {
-      const response = await axios.get('http://localhost:5000/get_data_from_database', { withCredentials: true });
+      const response = await axios.get('http://localhost:5000/get_data_from_database', {
+        params: { filter: filterValue },
+        withCredentials: true
+      });
       const rowsWithIds = response.data.map(row => ({ id: row.part_number, ...row }));
       setData(rowsWithIds);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   };
-  function isKeyboardEvent(event) {
-    return !!event.key;
-  }
-
-
 
 //Code to make cells editable with one click
 const [cellModesModel, setCellModesModel] = React.useState({});
@@ -86,13 +84,17 @@ const [cellModesModel, setCellModesModel] = React.useState({});
 
 
 //Here is the code to change the value of cells under the Failure_Rate_Type column according to the value of the MTBF_Value column:
-  const processRowUpdate = (params) => {
-    if ('MTBF_Value' in params) {
-      params.Failure_Rate_Type = params.MTBF_Value ? 'Specified, MTBF' : 'Calculated';
-    }
-    return params;
-  };
-  
+const processRowUpdate = (updatedRow, originalRow) => {
+  if ('mtbf_value' in updatedRow) {
+    updatedRow.failure_rate_type = updatedRow.mtbf_value ? 'Specified, MTBF' : 'Calculated';
+  }
+
+  if (JSON.stringify(updatedRow) !== JSON.stringify(originalRow)) {
+    updateRow(updatedRow);
+  }
+
+  return updatedRow;
+};
 
   //Purpose of EditTextArea is to make the cell editable with a pop-up window
   //This is a custom component for the DataGrid
@@ -170,28 +172,29 @@ const [cellModesModel, setCellModesModel] = React.useState({});
       id: rowCount,
       part_name: '',
       part_number: '',
-      BILGEM_Part_Number: '',
-      Manufacturer: '',
-      Datasheet: '',
-      Description: '',
-      Stock_Information: '',
-      Category: '',
-      Subcategory: '',
-      Subcategory_Type: '',
-      MTBF_Value: '',
-      Condition_Environment_Info: '',
-      Condition_Confidence_Level: '',
-      Condition_Temperature_Value: '',
-      Finishing_Material: '',
-      MTBF: '',
-      Failure_Rate: '',
-      Failure_Rate_Type: '',
-      Failure_Mode: '',
-      Failure_Cause: '',
-      Failure_Mode_Ratio: '',
-      Related_Documents: '',
+      bilgem_part_number: '', // Corrected field name
+      manufacturer: '', // Corrected field name
+      datasheet: '',
+      description: '',
+      stock_information: '', // Corrected field name
+      category: '',
+      subcategory: '',
+      subcategory_type: '', // Corrected field name
+      mtbf_value: '', // Corrected field name
+      condition_environment_info: '',
+      condition_confidence_level: '',
+      condition_temperature_value: '',
+      finishing_material: '',
+      mtbf: '', // Corrected field name
+      failure_rate: '',
+      failure_rate_type: '',
+      failure_mode: '',
+      failure_cause: '',
+      failure_mode_ratio: '',
+      related_documents: '',
     };
-    console.log('New row:', newRow)
+  
+    console.log('New row:', newRow);
     setData((prevData) => [...prevData, newRow]);
     setRowCount((prevCount) => prevCount + 1); // Increment the counter
   };
@@ -203,39 +206,40 @@ const [cellModesModel, setCellModesModel] = React.useState({});
         (row.id === null || row.id === undefined) ||
         !row.part_name ||
         !row.part_number ||
-        !row.BILGEM_Part_Number ||
-        !row.Manufacturer ||
-        !(row.Datasheet instanceof File) ||
-        !row.Description ||
-        !row.Stock_Information ||
-        !row.Category ||
-        !row.Subcategory ||
-        !row.Subcategory_Type ||
-        !row.MTBF_Value ||
-        !row.Condition_Environment_Info ||
-        !row.Condition_Confidence_Level ||
-        !row.Condition_Temperature_Value ||
-        !row.Finishing_Material ||
-        !row.MTBF ||
-        !row.Failure_Rate ||
-        !row.Failure_Rate_Type ||
-        !row.Failure_Mode ||
-        !row.Failure_Cause ||
-        !row.Failure_Mode_Ratio ||
-        !(row.Related_Documents instanceof File)
+        !row.bilgem_part_number || 
+        !row.manufacturer || 
+        !(row.datasheet instanceof File) || 
+        !row.description ||
+        !row.stock_information || 
+        !row.category ||
+        !row.subcategory ||
+        !row.subcategory_type || 
+        !row.mtbf_value || 
+        !row.condition_environment_info ||
+        !row.condition_confidence_level ||
+        !row.condition_temperature_value ||
+        !row.finishing_material ||
+        !row.mtbf || 
+        !row.failure_rate ||
+        !row.failure_rate_type ||
+        !row.failure_mode ||
+        !row.failure_cause ||
+        !row.failure_mode_ratio ||
+        !(row.related_documents instanceof File) 
     ) {
         alert('Please fill all of the fields!');
         return;
     }
-  const formData = new FormData();
-  for (const key in row) {
-    if (key === 'Datasheet' || key === 'Related_Documents') {
-      
-      formData.append(key, row[key]);
-    } else {
-      formData.append(key, row[key]);
+
+    const formData = new FormData();
+    for (const key in row) {
+        if (key === 'datasheet' || key === 'related_documents') {
+            formData.append(key, row[key]);
+        } else {
+            formData.append(key, row[key]);
+        }
     }
-  }
+
     fetch('http://localhost:5000/add_row', {
         method: 'POST',
         body: formData,
@@ -246,21 +250,66 @@ const [cellModesModel, setCellModesModel] = React.useState({});
                 alert('Failed to save row:' + data.error);
             } else {
                 alert('Row saved successfully!');
-                return fetch('http://localhost:5000/get_data_from_database')
+                return fetch('http://localhost:5000/get_data_from_database');
             }
         })
         .then((response) => response.json())
         .then((data) => {
-        // Update your state with the new data
-        this.setState({ data: data });
-})
+            // Update your state with the new data
+            this.setState({ data: data });
+        })
         .catch((error) => {
             console.error('Error:', error);
         });
 };
+  const deleteRow= (row) => {
+    fetch('http://localhost:5000/delete_row', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ part_number: row.id}),
+    })
+    .then((response) => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('Row deleted successfully!');
+        setData(data.filter((r) => r.id !== row.id));
+      } else {
+        console.error('Failed to delete row:', data.error);
+      }
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+  };
 
-
-
+  const updateRow = (row) => {
+    const formData = new FormData();
+    for (const key in row) {
+      if (key === 'datasheet' || key === 'related_documents') {
+        formData.append(key, row[key]);
+      } else {
+        formData.append(key, row[key]);
+      }
+    }
+  
+    fetch('http://localhost:5000/update_row', {
+      method: 'PUT',
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.error) {
+          alert('Failed to update row:' + data.error);
+        } else {
+          alert('Row updated successfully!');
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  };
       
 const handleFileChange = (event, params, field) => {
   event.persist();
@@ -335,13 +384,15 @@ const handleFileChange = (event, params, field) => {
       groupId:'Action Buttons',
       headerAlign:'center',
       description:'',
-      children:[{field:'save'}]
+      children:[{field:'save'},
+      {field:'delete'},
+    ]
     }
   ]
 
   const columns = [
         
-        { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:true},
+        { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:true, description:''},
         { field: 'part_number', headerName: 'Part Number', width: 150,headerAlign:'center', editable:true },
         { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:true },
         { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true },
@@ -354,8 +405,8 @@ const handleFileChange = (event, params, field) => {
             return (
               <input
                 type="file"
-                onChange={(event) => handleFileChange(event, params, 'Datasheet')}
-                name="Datasheet"
+                onChange={(event) => handleFileChange(event, params, 'datasheet')}
+                name="datasheet"
                 accept=".pdf, .doc, .docx, .xls, .xlsx, .csv"
                 required
               />
@@ -432,7 +483,7 @@ const handleFileChange = (event, params, field) => {
         };
             
             
-            return subcategoryOptions[row.Category] || [];
+            return subcategoryOptions[row.category] || [];
 
       
           },
@@ -523,8 +574,8 @@ const handleFileChange = (event, params, field) => {
             return (
               <input
                 type="file"
-                onChange={(event) => handleFileChange(event, params, 'Related_Documents')}
-                name="Related_Documents"
+                onChange={(event) => handleFileChange(event, params, 'related_documents')}
+                name="related_documents"
                 accept=".pdf, .doc, .docx, .xls, .xlsx, .csv"
                 required
               />
@@ -534,6 +585,7 @@ const handleFileChange = (event, params, field) => {
       {
         field: 'save',
         headerName: 'Save',
+        description:'Please only click this button after filling all of the fields and adding a new row!',
         headerAlign: 'center',
         fontFamily:"'Montserrat', sans-serif",
         sortable: false,
@@ -542,19 +594,40 @@ const handleFileChange = (event, params, field) => {
         
           
           <Button
-            variant="contained"
+            variant="contained"w
             color="primary"
             size="small"
+            
             onClick={() => saveRow(params.row)}
            
           style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
           >
-            Save
+          <SaveIcon />
+          
           </Button>
        
         ),
         
       },
+      {
+        field:'delete',
+        headerName:'Delete',
+        description:'Please only click this button if you wanna delete the row!',
+        headerAlign:'center',
+        sortable:false,
+        width:150,
+        renderCell: (params) => (
+          <Button
+            variant="contained"
+            color="secondary"
+            size="small"
+            onClick={() => deleteRow(params.row)}
+            style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+          >
+            <DeleteIcon />
+          </Button>
+        )
+      }
     
     // Add other column groups in a similar structure
   ];
@@ -562,7 +635,7 @@ const handleFileChange = (event, params, field) => {
   return (
   
     <div>
-      <Button variant="contained" onClick={addRow} style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", }} >
+      <Button variant="contained" onClick={addRow} style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", position: 'relative', left: '6px'}} >
         Add Row
       </Button>
 
@@ -594,7 +667,6 @@ const handleFileChange = (event, params, field) => {
           checkboxSelection
           pageSizeOptions={[5, 10, 20, 50, 100]}
           disableRowSelectionOnClick
-          
           autoPageSize
           experimentalFeatures={{ columnGrouping: true }}
           columnGroupingModel={columnGroupingModel}

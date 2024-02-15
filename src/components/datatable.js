@@ -12,29 +12,33 @@ import Popper from '@mui/material/Popper';
 import Paper from '@mui/material/Paper';
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Cancel';
+import LinearProgress from '@mui/material/LinearProgress';
 
 const DataTable = (params) => {
   const [data, setData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
-  
- 
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const fetchData = async (filterValue = '') => {
+  const fetchData = async (filterValue ='') => {
+    setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/get_data_from_database', {
-        params: { filter: filterValue },
-        withCredentials: true
-      });
+      const response = await axios.get('http://localhost:5000/get_data_from_database', { withCredentials: true });
       const rowsWithIds = response.data.map(row => ({ id: row.part_number, ...row }));
       setData(rowsWithIds);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
+    setIsLoading(false);
   };
+  function isKeyboardEvent(event) {
+    return !!event.key;
+  }
+
+
 
 //Code to make cells editable with one click
 const [cellModesModel, setCellModesModel] = React.useState({});
@@ -90,9 +94,10 @@ const processRowUpdate = (updatedRow, originalRow) => {
   }
 
   if (JSON.stringify(updatedRow) !== JSON.stringify(originalRow)) {
+    if(!updatedRow.isNew) {
     updateRow(updatedRow);
   }
-
+}
   return updatedRow;
 };
 
@@ -192,13 +197,17 @@ const processRowUpdate = (updatedRow, originalRow) => {
       failure_cause: '',
       failure_mode_ratio: '',
       related_documents: '',
+      isNew: true,
+      
     };
   
     console.log('New row:', newRow);
     setData((prevData) => [...prevData, newRow]);
     setRowCount((prevCount) => prevCount + 1); // Increment the counter
+    
   };
   const saveRow = (row) => {
+    setIsLoading(true);
     console.log('Saving row', row);
     
     // Validation of all of the fields are filled
@@ -229,6 +238,7 @@ const processRowUpdate = (updatedRow, originalRow) => {
     ) {
         alert('Please fill all of the fields!');
         return;
+
     }
 
     const formData = new FormData();
@@ -250,6 +260,7 @@ const processRowUpdate = (updatedRow, originalRow) => {
                 alert('Failed to save row:' + data.error);
             } else {
                 alert('Row saved successfully!');
+                row.isNew = false;
                 return fetch('http://localhost:5000/get_data_from_database');
             }
         })
@@ -260,9 +271,14 @@ const processRowUpdate = (updatedRow, originalRow) => {
         })
         .catch((error) => {
             console.error('Error:', error);
+        })
+        .finally(() => {
+            setIsLoading(false);
         });
-};
+    
+    };
   const deleteRow= (row) => {
+    setIsLoading(true);
     fetch('http://localhost:5000/delete_row', {
         method: 'DELETE',
         headers: {
@@ -281,10 +297,14 @@ const processRowUpdate = (updatedRow, originalRow) => {
     })
     .catch((error) => {
       console.error('Error:', error);
+    })
+    .finally(() => {
+      setIsLoading(false);
     });
   };
 
   const updateRow = (row) => {
+    setIsLoading(true);
     const formData = new FormData();
     for (const key in row) {
       if (key === 'datasheet' || key === 'related_documents') {
@@ -308,6 +328,9 @@ const processRowUpdate = (updatedRow, originalRow) => {
       })
       .catch((error) => {
         console.error('Error:', error);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
       
@@ -392,13 +415,14 @@ const handleFileChange = (event, params, field) => {
 
   const columns = [
         
-        { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:true, description:''},
-        { field: 'part_number', headerName: 'Part Number', width: 150,headerAlign:'center', editable:true },
-        { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:true },
-        { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true },
+        { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:true, description:'Text is expected for this field. Example: Resistor, Capacitor, etc.'},
+        { field: 'part_number', headerName: 'Part Number', width: 150,headerAlign:'center', editable:true, description:'This field may contain text-number mixture of values. Example: CL03A104KO3NNNC' },
+        { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:true, description:'Number is expected for this field. Example: 300006936' },
+        { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true , description:'Text is expected for this field. Example: SAMSUNG'},
         {
           field: 'datasheet',
           headerName: 'Datasheet',
+          description: 'Please upload the datasheet of the part as a PDF file.',
           width: 150,
           headerAlign: 'center',
           renderCell: (params) => {
@@ -407,7 +431,7 @@ const handleFileChange = (event, params, field) => {
                 type="file"
                 onChange={(event) => handleFileChange(event, params, 'datasheet')}
                 name="datasheet"
-                accept=".pdf, .doc, .docx, .xls, .xlsx, .csv"
+                accept=".pdf"
                 required
               />
             );
@@ -418,7 +442,7 @@ const handleFileChange = (event, params, field) => {
         {
           field: 'description',
           headerName: 'Description',
-          description: '',
+          description: 'Example:CAP CER 39pF 25V 2% NP0 0201',
           width: 150,
           headerAlign: 'center',
           editable:true,
@@ -426,6 +450,7 @@ const handleFileChange = (event, params, field) => {
         
         { field: 'stock_information',
          headerName: 'Stock Information',
+         description: 'Example: 1000 pieces in stock.',
           width: 180,
           headerAlign:'center',
           editable:true },
@@ -433,6 +458,7 @@ const handleFileChange = (event, params, field) => {
         {
           field: 'category',
           headerName: 'Category',
+          description:'Please select the category of the part from the dropdown menu.',
           width: 200,
           headerAlign: 'center',
           type:'singleSelect',
@@ -456,6 +482,7 @@ const handleFileChange = (event, params, field) => {
         {
           field: 'subcategory',
           headerName: 'Subcategory',
+          description:'Please select the subcategory of the part from the dropdown menu.',
           width: 200,
           headerAlign: 'center',
           editable:true,
@@ -503,17 +530,18 @@ const handleFileChange = (event, params, field) => {
           ),
         },
     
-        { field: 'subcategory_type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:true},
-        { field: 'remarks', headerName: 'Remarks', width: 150,headerAlign:'center', editable:true },
+        { field: 'subcategory_type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:true, description:'Example:Ceramic Ferrite, MIL-F15733'},
+        { field: 'remarks', headerName: 'Remarks', width: 150,headerAlign:'center', editable:true,description:'Example:Ansivita uyarlaması için programda quality leveli R seçin. ' },
 
 
 
-        { field: 'mtbf_value', headerName: 'MTBF Value', width: 150,headerAlign:'center',editable:true},
+        { field: 'mtbf_value', headerName: 'MTBF Value', width: 150,headerAlign:'center',editable:true, description:'Number is expected for this field. Number might reach up high values. Example:2000000000'},
 
         {
           field: 'condition_environment_info',
         
           headerName: 'Condition Environment Info',
+          description:'Please select the condition environment info of the part from the dropdown menu.',
           width: 250,
           headerAlign: 'center',
           type:'singleSelect',
@@ -552,22 +580,23 @@ const handleFileChange = (event, params, field) => {
         
         
         
-        { field: 'condition_confidence_level', headerName: 'Condition Confidence Level', width: 220 ,headerAlign:'center', editable:true},
-        { field: 'condition_temperature_value', headerName: 'Condition Temperature Value', width: 240,headerAlign:'center', editable:true },
-        { field: 'finishing_material', headerName: 'Finishing Material', width: 180,headerAlign:'center', editable:true },
+        { field: 'condition_confidence_level', headerName: 'Condition Confidence Level', width: 220 ,headerAlign:'center', editable:true, description:'Number is expected for this field. Example:90'},
+        { field: 'condition_temperature_value', headerName: 'Condition Temperature Value', width: 240,headerAlign:'center', editable:true, description:'Number is expected for this field. Example:30' },
+        { field: 'finishing_material', headerName: 'Finishing Material', width: 180,headerAlign:'center', editable:true, description:'Text is expected for this field. Example:Matte Sn' },
       
       
-        { field: 'mtbf', headerName: 'MTBF', width: 120 ,headerAlign:'center', editable:true},
-        { field: 'failure_rate', headerName: 'Failure Rate', width: 150 ,headerAlign:'center', editable:true},
-        { field: 'failure_rate_type', headerName: 'Failure Rate Type', width: 180 ,headerAlign:'center',editable:false},
+        { field: 'mtbf', headerName: 'MTBF', width: 120 ,headerAlign:'center', editable:true, description:'Number is expected for this field. Example:2000000000'},
+        { field: 'failure_rate', headerName: 'Failure Rate', width: 150 ,headerAlign:'center', editable:true, description:'Number with a decimal is expected for this field. Example:0.000000025380'},
+        { field: 'failure_rate_type', headerName: 'Failure Rate Type', width: 180 ,headerAlign:'center',editable:false, description:'This field is not editable. Its value is decided according to the value of the MTBF field.'},
       
       
-        { field: 'failure_mode', headerName: 'Failure Mode', width: 120 ,headerAlign:'center', editable:true, ...multilineColumn },
-        { field: 'failure_cause', headerName: 'Failure Cause', width: 150 ,headerAlign:'center', editable:true},
-        { field: 'failure_mode_ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:true, ...multilineColumn},
+        { field: 'failure_mode', headerName: 'Failure Mode', width: 120 ,headerAlign:'center', editable:true, ...multilineColumn ,description:'Text is expected for this field. Example:Open, Short, etc.'},
+        { field: 'failure_cause', headerName: 'Failure Cause', width: 150 ,headerAlign:'center', editable:true,description:'Text is expected for this field. Example:High Voltage Transients, High temperature, whisker, Mechanical Stress, Contamination, etc.'},
+        { field: 'failure_mode_ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:true, ...multilineColumn, description:'A value between 0 and 1 is expected for this field. Example:0.29'},
         {
           field: 'related_documents',
           headerName: 'Related Documents',
+          description:'Please upload the related documents of the part as a PDF file.',
           width: 150,
           headerAlign: 'center',
           renderCell: (params) => {
@@ -576,7 +605,7 @@ const handleFileChange = (event, params, field) => {
                 type="file"
                 onChange={(event) => handleFileChange(event, params, 'related_documents')}
                 name="related_documents"
-                accept=".pdf, .doc, .docx, .xls, .xlsx, .csv"
+                accept=".pdf"
                 required
               />
             );
@@ -643,11 +672,17 @@ const handleFileChange = (event, params, field) => {
         <DataGrid
         
           columns={columns}
-          slots={{ toolbar: GridToolbar }}
+          slots={{ 
+              toolbar: GridToolbar,
+              loadingOverlay: LinearProgress,
           
+           }}
+            
+  
             slotProps={{
               toolbar: {
-              showQuickFilter: true,
+                showQuickFilter: true,
+              
               },
             }}
           onCellEditStop={(params, event) => {
@@ -672,7 +707,7 @@ const handleFileChange = (event, params, field) => {
           columnGroupingModel={columnGroupingModel}
           filterMode="server" // Enable filtering mode
           showCellVerticalBorder // Show vertical borders for cells
-          
+          loading={isLoading}
         
           sx={{
             

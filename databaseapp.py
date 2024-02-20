@@ -1,7 +1,12 @@
-from flask import Flask,jsonify,request
+from flask import Flask,jsonify,request,send_file, Response
 import psycopg2
 from flask_cors import CORS
 import base64
+import io
+from flask import send_file
+from io import BytesIO
+import mimetypes
+
 
 
 
@@ -92,7 +97,9 @@ def add_row():
 
     datasheet_data = datasheet_file.read()
     related_documents_data = related_documents_file.read()
-
+        
+    print("Size of datasheet data:", len(datasheet_data))
+    print("Size of related documents data:", len(related_documents_data))
 
     try:
         conn = psycopg2.connect(
@@ -103,6 +110,11 @@ def add_row():
             port = '5432'  
         )
         cursor = conn.cursor()
+
+
+        cursor.execute("SELECT 1 FROM PartIdentification WHERE part_number = %s", (data['part_number'],))
+        if cursor.fetchone():
+            return jsonify({'error': 'Part number already exists'}), 400
 
         # Insert the new row into the database
         cursor.execute("""
@@ -228,10 +240,64 @@ def update_row():
 
     except psycopg2.Error as e:
         print("Error updating data in PostgreSQL:", e)
-        return jsonify({'error': 'Failed to update row'}), 500
+        return jsonify({'error': 'Failed to update row'}), 500  
 
+@app.route('/download/<file_type>/<part_number>', methods=['GET'])
+def download_file(file_type, part_number):
+    # Query the database to get the file data for the given part_number and file_type
+    conn = psycopg2.connect(
+        dbname = 'Failures',
+        user = 'postgres',
+        password = 'timberlaker.67',
+        host = 'localhost',
+        port = '5432'  
+    )
+    cursor = conn.cursor()
 
+    # Determine the correct table based on the file_type
+    table_name = 'partidentification' if file_type == 'datasheet' else 'documents'
 
+    cursor.execute(f"""
+    SELECT {file_type} FROM {table_name} WHERE part_number = %s
+    """, (part_number,))
+
+    file_data = cursor.fetchone()[0]
+
+    cursor.close()
+    conn.close()
+
+    # Create a BytesIO object from the file data
+    file_io = BytesIO(file_data)
+
+    # Create a Response object and set the Content-Disposition header to specify the filename
+    response = Response(file_io, mimetype='application/pdf')
+    response.headers.set('Content-Disposition', 'attachment', filename=f'{part_number}_{file_type}.pdf')
+
+    return response
+
+#This function is for getting the part numbers from the database and sending them to the frontend react side for autocomplete feature.
+@app.route('/get_part_numbers', methods=['GET'])
+def get_part_numbers():
+    try:
+        conn = psycopg2.connect(
+            dbname='Failures',
+            user='postgres',
+            password='timberlaker.67',
+            host='localhost',
+            port='5432'
+        )
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT part_number FROM PartIdentification")
+        part_numbers = [row[0] for row in cursor.fetchall()]
+
+        cursor.close()
+        conn.close()
+
+        return jsonify(part_numbers)
+    except psycopg2.Error as e:
+        print("Error fetching part numbers from PostgreSQL:", e)
+        return jsonify({'error': 'Failed to fetch part numbers'})
 
 
 

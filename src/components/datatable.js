@@ -13,6 +13,10 @@ import Paper from '@mui/material/Paper';
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Cancel';
 import LinearProgress from '@mui/material/LinearProgress';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import PartNumberAutocomplete from './PartNumberAutocomplete';
+
+
 
 const DataTable = (params) => {
   const [data, setData] = useState([]);
@@ -206,7 +210,7 @@ const processRowUpdate = (updatedRow, originalRow) => {
     setRowCount((prevCount) => prevCount + 1); // Increment the counter
     
   };
-  const saveRow = (row) => {
+  const saveRow = (row, setState) => {
     setIsLoading(true);
     console.log('Saving row', row);
     
@@ -251,23 +255,27 @@ const processRowUpdate = (updatedRow, originalRow) => {
     }
 
     fetch('http://localhost:5000/add_row', {
-        method: 'POST',
-        body: formData,
+    method: 'POST',
+    body: formData,
+})
+    .then((response) => response.json())
+    .then((data) => {
+        if (data.error) {
+            if (data.error === 'Part number already exists') {
+                alert('Part number already exists. Please use a different part number.');
+            } else {
+                alert('Failed to save row:' + data.error);
+            }
+        } else {
+            alert('Row saved successfully!');
+            row.isNew = false;
+            return fetch('http://localhost:5000/get_data_from_database');
+        }
     })
         .then((response) => response.json())
         .then((data) => {
-            if (data.error) {
-                alert('Failed to save row:' + data.error);
-            } else {
-                alert('Row saved successfully!');
-                row.isNew = false;
-                return fetch('http://localhost:5000/get_data_from_database');
-            }
-        })
-        .then((response) => response.json())
-        .then((data) => {
             // Update your state with the new data
-            this.setState({ data: data });
+            setState({ data: data });
         })
         .catch((error) => {
             console.error('Error:', error);
@@ -342,6 +350,22 @@ const handleFileChange = (event, params, field) => {
   // Update the row data with the file object
   params.api.updateRows([{ id: params.id, [field]: file }]);
 };
+const downloadFile = (partNumber, fileType) => {
+  setIsLoading(true); 
+  fetch(`http://localhost:5000/download/${fileType}/${partNumber}`)
+      .then(response => response.blob())
+      .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${partNumber}_${fileType}.pdf`;
+          document.body.appendChild(a); 
+          a.click();    
+          a.remove();
+          setIsLoading(false);          
+      });
+};
+
   const columnGroupingModel = [
     {
       groupId:'Part Identification',
@@ -416,27 +440,43 @@ const handleFileChange = (event, params, field) => {
   const columns = [
         
         { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:true, description:'Text is expected for this field. Example: Resistor, Capacitor, etc.'},
-        { field: 'part_number', headerName: 'Part Number', width: 150,headerAlign:'center', editable:true, description:'This field may contain text-number mixture of values. Example: CL03A104KO3NNNC' },
+        { field: 'part_number',
+          headerName: 'Part Number',
+          width: 150,
+          headerAlign:'center',
+          editable:true,
+          description:'This field may contain text-number mixture of values. Example: CL03A104KO3NNNC',
+        },
         { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:true, description:'Number is expected for this field. Example: 300006936' },
         { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true , description:'Text is expected for this field. Example: SAMSUNG'},
         {
           field: 'datasheet',
           headerName: 'Datasheet',
           description: 'Please upload the datasheet of the part as a PDF file.',
-          width: 150,
+          width: 350,
           headerAlign: 'center',
+          disableExport: true,
           renderCell: (params) => {
-            return (
-              <input
-                type="file"
-                onChange={(event) => handleFileChange(event, params, 'datasheet')}
-                name="datasheet"
-                accept=".pdf"
-                required
-              />
-            );
+              return (
+                  <div>
+                      <input
+                          type="file"
+                          onChange={(event) => handleFileChange(event, params, 'datasheet')}
+                          name="datasheet"
+                          accept=".pdf"
+                      />
+                      <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          onClick={() => downloadFile(params.row.part_number, 'datasheet')}
+                      >
+                      <FileDownloadIcon />
+                      </Button>
+                  </div>
+              );
           },
-        },
+      },
 
 
         {
@@ -597,20 +637,30 @@ const handleFileChange = (event, params, field) => {
           field: 'related_documents',
           headerName: 'Related Documents',
           description:'Please upload the related documents of the part as a PDF file.',
-          width: 150,
+          width: 350,
           headerAlign: 'center',
+          disableExport: true,
           renderCell: (params) => {
-            return (
-              <input
-                type="file"
-                onChange={(event) => handleFileChange(event, params, 'related_documents')}
-                name="related_documents"
-                accept=".pdf"
-                required
-              />
-            );
+              return (
+                  <div>
+                      <input
+                          type="file"
+                          onChange={(event) => handleFileChange(event, params, 'related_documents')}
+                          name="related_documents"
+                          accept=".pdf"
+                      />
+                      <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          onClick={() => downloadFile(params.row.part_number, 'related_documents')}
+                      >
+                          <FileDownloadIcon />
+                      </Button>
+                  </div>
+              );
           },
-        },
+      },
       {
         field: 'save',
         headerName: 'Save',
@@ -623,7 +673,7 @@ const handleFileChange = (event, params, field) => {
         
           
           <Button
-            variant="contained"w
+            variant="contained"
             color="primary"
             size="small"
             
@@ -656,7 +706,9 @@ const handleFileChange = (event, params, field) => {
             <DeleteIcon />
           </Button>
         )
-      }
+      },
+      
+      
     
     // Add other column groups in a similar structure
   ];
@@ -668,7 +720,7 @@ const handleFileChange = (event, params, field) => {
         Add Row
       </Button>
 
-      <div className="h-96 w-full bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="h-[500px] w-full bg-white shadow-md rounded-lg overflow-hidden">
         <DataGrid
         
           columns={columns}
@@ -700,15 +752,15 @@ const handleFileChange = (event, params, field) => {
           rows={data}         
           rowHeight={40}
           checkboxSelection
-          pageSizeOptions={[5, 10, 20, 50, 100]}
+          pageSize={10}
+          pageSizeOptions={[4,10, 25,100]}
           disableRowSelectionOnClick
-          autoPageSize
           experimentalFeatures={{ columnGrouping: true }}
           columnGroupingModel={columnGroupingModel}
           filterMode="server" // Enable filtering mode
           showCellVerticalBorder // Show vertical borders for cells
           loading={isLoading}
-        
+          
           sx={{
             
             '&  .MuiDataGrid-columnSeparator': {
@@ -726,6 +778,7 @@ const handleFileChange = (event, params, field) => {
             
             
             },
+            
           }}
           
         

@@ -18,10 +18,14 @@ import PartNumberAutocomplete from './PartNumberAutocomplete';
 
 
 
+
+
 const DataTable = (params) => {
   const [data, setData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [datasheetFileName, setDatasheetFileName] = useState('');
+  const [relatedDocumentsFileName, setRelatedDocumentsFileName] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -349,6 +353,12 @@ const handleFileChange = (event, params, field) => {
 
   // Update the row data with the file object
   params.api.updateRows([{ id: params.id, [field]: file }]);
+
+  if (field ==='datasheet') {
+    setDatasheetFileName(file.name);
+  } else if (field === 'related_documents') {
+    setRelatedDocumentsFileName(file.name);
+  }
 };
 const downloadFile = (partNumber, fileType) => {
   setIsLoading(true); 
@@ -440,12 +450,21 @@ const downloadFile = (partNumber, fileType) => {
   const columns = [
         
         { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:true, description:'Text is expected for this field. Example: Resistor, Capacitor, etc.'},
-        { field: 'part_number',
+        {
+          field: 'part_number',
           headerName: 'Part Number',
           width: 150,
-          headerAlign:'center',
-          editable:true,
-          description:'This field may contain text-number mixture of values. Example: CL03A104KO3NNNC',
+          headerAlign: 'center',
+          editable: true,
+          description: 'This field may contain text-number mixture of values. Example: CL03A104KO3NNNC',
+          renderEditCell: (params) => (
+            <PartNumberAutocomplete
+              value={params.value}
+              onChange={(newValue) => params.api.setEditCellValue({ id: params.id, field: params.field, value: newValue }, params.event)}
+              isNew={params.row.isNew}
+            />
+          ),
+
         },
         { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:true, description:'Number is expected for this field. Example: 300006936' },
         { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true , description:'Text is expected for this field. Example: SAMSUNG'},
@@ -465,6 +484,7 @@ const downloadFile = (partNumber, fileType) => {
                           name="datasheet"
                           accept=".pdf"
                       />
+                      <span>{datasheetFileName}</span>
                       <Button
                           variant="contained"
                           color="primary"
@@ -649,6 +669,7 @@ const downloadFile = (partNumber, fileType) => {
                           name="related_documents"
                           accept=".pdf"
                       />
+                      <span>{relatedDocumentsFileName}</span>
                       <Button
                           variant="contained"
                           color="primary"

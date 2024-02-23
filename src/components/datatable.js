@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { DataGrid, GridToolbar, useGridApiContext, GridCellEditStopReasons, GridCellModes} from '@mui/x-data-grid';
 import { Button } from '@mui/material';
-import 'C:/Users/eren.buldum/ilsdatamanagementapp/src/tailwind.css';
-import 'C:/Users/eren.buldum/ilsdatamanagementapp/src/styles.css';
+import '../tailwind.css';
+import '../styles.css';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Box from '@mui/material/Box';
 import InputBase from '@mui/material/InputBase';
@@ -31,7 +31,7 @@ const DataTable = (params) => {
     fetchData();
   }, []);
 
-  const fetchData = async (filterValue ='') => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
       const response = await axios.get('http://localhost:5000/get_data_from_database', { withCredentials: true });
@@ -42,6 +42,23 @@ const DataTable = (params) => {
     }
     setIsLoading(false);
   };
+
+  const search = async (filterValue) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get('http://localhost:5000/search', {
+        params: { filter: filterValue.join(' ') }, // Join the array into a single string
+        withCredentials: true
+      });
+      const rowsWithIds = response.data.map(row => ({ id: row.part_number, ...row }));
+      setData(rowsWithIds);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+    setIsLoading(false);
+  };
+
+
   function isKeyboardEvent(event) {
     return !!event.key;
   }
@@ -441,6 +458,7 @@ const downloadFile = (partNumber, fileType) => {
       groupId:'Action Buttons',
       headerAlign:'center',
       description:'',
+      
       children:[{field:'save'},
       {field:'delete'},
     ]
@@ -689,6 +707,7 @@ const downloadFile = (partNumber, fileType) => {
         headerAlign: 'center',
         fontFamily:"'Montserrat', sans-serif",
         sortable: false,
+        disableExport: true,
         width: 150,
         renderCell: (params) => (
         
@@ -715,6 +734,7 @@ const downloadFile = (partNumber, fileType) => {
         description:'Please only click this button if you wanna delete the row!',
         headerAlign:'center',
         sortable:false,
+        disableExport:true,
         width:150,
         renderCell: (params) => (
           <Button
@@ -781,7 +801,11 @@ const downloadFile = (partNumber, fileType) => {
           filterMode="server" // Enable filtering mode
           showCellVerticalBorder // Show vertical borders for cells
           loading={isLoading}
-          
+          onFilterModelChange={(model) => {
+            if (model.quickFilterValues) {
+              search(model.quickFilterValues);
+            } 
+          }}
           sx={{
             
             '&  .MuiDataGrid-columnSeparator': {

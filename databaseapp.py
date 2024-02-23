@@ -298,6 +298,77 @@ def get_part_numbers():
     except psycopg2.Error as e:
         print("Error fetching part numbers from PostgreSQL:", e)
         return jsonify({'error': 'Failed to fetch part numbers'})
+@app.route('/search', methods=['GET'])
+def search():
+    try:
+        conn = psycopg2.connect(
+            dbname='Failures',
+            user='postgres',
+            password='timberlaker.67',
+            host='localhost',
+            port='5432'
+        )
+        cursor = conn.cursor()
+
+        # Get the filter value from the request parameters
+        filter_value = request.args.get('filter', '')
+
+        # Split the filter value by spaces to get individual words
+        filter_words = filter_value.split()
+
+        # Use the filter words in your SQL query to filter the data
+        # Be careful to avoid SQL injection attacks by using parameterized queries
+        query = """
+        SELECT pi.part_name, pi.part_number, pi.bilgem_part_number, pi.manufacturer,
+            pi.description, pi.stock_information,
+            pc.category, pc.subcategory, pc.subcategory_type, pc.remarks,
+            mi.mtbf_value, mi.condition_environment_info, mi.condition_confidence_level,
+            mi.condition_temperature_value, mi.finishing_material,
+            rp.mtbf, rp.failure_rate, rp.failure_rate_type,
+            fi.failure_mode, fi.failure_cause, fi.failure_mode_ratio
+
+        FROM PartIdentification pi
+        LEFT JOIN PartCategorization pc ON pi.part_number = pc.part_number
+        LEFT JOIN ManufacturerInformation mi ON pi.part_number = mi.part_number
+        LEFT JOIN ReliabilityParameters rp ON pi.part_number = rp.part_number
+        LEFT JOIN FailureInformation fi ON pi.part_number = fi.part_number
+        LEFT JOIN Documents d ON pi.part_number = d.part_number"""
+
+        # Only append the WHERE clause if there are any filter words
+        if filter_words:
+            query += " WHERE "
+
+            # Add a condition for each filter word
+            # Add a condition for each filter word
+        # Add a condition for each filter word
+        for i, word in enumerate(filter_words):
+            if i > 0:
+                query += " OR "
+            query += "(pi.part_name ILIKE %s OR CAST(pi.part_number AS TEXT) ILIKE %s OR CAST(pi.bilgem_part_number AS TEXT) ILIKE %s OR pi.manufacturer ILIKE %s OR pi.description ILIKE %s OR pi.stock_information ILIKE %s OR pc.category ILIKE %s OR pc.subcategory ILIKE %s OR pc.subcategory_type ILIKE %s OR pc.remarks ILIKE %s OR CAST(mi.mtbf_value AS TEXT) ILIKE %s OR mi.condition_environment_info ILIKE %s OR CAST(mi.condition_confidence_level AS TEXT) ILIKE %s OR CAST(mi.condition_temperature_value AS TEXT) ILIKE %s OR mi.finishing_material ILIKE %s OR CAST(rp.mtbf AS TEXT) ILIKE %s OR CAST(rp.failure_rate AS TEXT) ILIKE %s OR rp.failure_rate_type ILIKE %s OR fi.failure_mode ILIKE %s OR fi.failure_cause ILIKE %s OR CAST(fi.failure_mode_ratio AS TEXT) ILIKE %s)"
+
+        # Flatten the list of tuples into a single list
+        params = [item for sublist in [("%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%", "%" + word + "%") for word in filter_words] for item in sublist]
+
+        # Execute the query with the parameters
+        cursor.execute(query, params)
+        data = cursor.fetchall()
+
+        keys = [desc[0] for desc in cursor.description]
+        data_dict = []
+
+        for row in data:
+            row_dict = dict(zip(keys, row))
+            data_dict.append(row_dict)
+
+        cursor.close()
+        conn.close()
+
+        # Return JSON response
+        return jsonify(data_dict)
+
+    except psycopg2.Error as e:
+        print("Error fetching data from PostgreSQL:", e)
+        return jsonify({'error': 'Failed to fetch data'})
 
 
 

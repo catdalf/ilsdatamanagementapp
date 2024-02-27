@@ -47,6 +47,13 @@ const Sidebar = ({ handleSidebarItemClick }) => {
           >
             Data Table
           </button>
+          <button
+          onClick={() => handleItemClick('Import')}
+          className="w-full py-2 text-white hover:text-white hover:bg-customBlue"
+          >
+            Import
+          </button>
+
         </div>
       </Drawer>
     </div>

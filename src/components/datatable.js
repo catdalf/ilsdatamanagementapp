@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DataGrid, GridToolbar, useGridApiContext, GridCellEditStopReasons, GridCellModes} from '@mui/x-data-grid';
+import { DataGrid, useGridApiContext, GridCellEditStopReasons, GridCellModes} from '@mui/x-data-grid';
 import { Button } from '@mui/material';
 import '../tailwind.css';
 import '../styles.css';
@@ -15,8 +15,7 @@ import DeleteIcon from '@mui/icons-material/Cancel';
 import LinearProgress from '@mui/material/LinearProgress';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import PartNumberAutocomplete from './PartNumberAutocomplete';
-
-
+import CustomToolbar from './CustomToolbar';
 
 
 
@@ -26,6 +25,9 @@ const DataTable = (params) => {
   const [isLoading, setIsLoading] = useState(false);
   const [datasheetFileName, setDatasheetFileName] = useState('');
   const [relatedDocumentsFileName, setRelatedDocumentsFileName] = useState('');
+  
+  
+  
 
   useEffect(() => {
     fetchData();
@@ -57,7 +59,7 @@ const DataTable = (params) => {
     }
     setIsLoading(false);
   };
-
+  
 
   function isKeyboardEvent(event) {
     return !!event.key;
@@ -202,20 +204,20 @@ const processRowUpdate = (updatedRow, originalRow) => {
       id: rowCount,
       part_name: '',
       part_number: '',
-      bilgem_part_number: '', // Corrected field name
-      manufacturer: '', // Corrected field name
+      bilgem_part_number: '', 
+      manufacturer: '', 
       datasheet: '',
       description: '',
-      stock_information: '', // Corrected field name
+      stock_information: '', 
       category: '',
       subcategory: '',
-      subcategory_type: '', // Corrected field name
-      mtbf_value: '', // Corrected field name
+      subcategory_type: '', 
+      mtbf_value: '', 
       condition_environment_info: '',
       condition_confidence_level: '',
       condition_temperature_value: '',
       finishing_material: '',
-      mtbf: '', // Corrected field name
+      mtbf: '', 
       failure_rate: '',
       failure_rate_type: '',
       failure_mode: '',
@@ -231,6 +233,8 @@ const processRowUpdate = (updatedRow, originalRow) => {
     setRowCount((prevCount) => prevCount + 1); // Increment the counter
     
   };
+  
+
   const saveRow = (row, setState) => {
     setIsLoading(true);
     console.log('Saving row', row);
@@ -471,7 +475,7 @@ const downloadFile = (partNumber, fileType) => {
         {
           field: 'part_number',
           headerName: 'Part Number',
-          width: 150,
+          width: 220,
           headerAlign: 'center',
           editable: true,
           description: 'This field may contain text-number mixture of values. Example: CL03A104KO3NNNC',
@@ -490,7 +494,7 @@ const downloadFile = (partNumber, fileType) => {
           field: 'datasheet',
           headerName: 'Datasheet',
           description: 'Please upload the datasheet of the part as a PDF file.',
-          width: 350,
+          width: 400,
           headerAlign: 'center',
           disableExport: true,
           renderCell: (params) => {
@@ -503,7 +507,7 @@ const downloadFile = (partNumber, fileType) => {
                           accept=".pdf"
                       />
                       <span>{datasheetFileName}</span>
-                      <Button
+                      <Button style={{backgroundColor:'#ac4c5e'}}
                           variant="contained"
                           color="primary"
                           size="small"
@@ -521,7 +525,7 @@ const downloadFile = (partNumber, fileType) => {
           field: 'description',
           headerName: 'Description',
           description: 'Example:CAP CER 39pF 25V 2% NP0 0201',
-          width: 150,
+          width: 220,
           headerAlign: 'center',
           editable:true,
         },
@@ -561,7 +565,7 @@ const downloadFile = (partNumber, fileType) => {
           field: 'subcategory',
           headerName: 'Subcategory',
           description:'Please select the subcategory of the part from the dropdown menu.',
-          width: 200,
+          width: 240,
           headerAlign: 'center',
           editable:true,
           type: 'singleSelect',
@@ -609,7 +613,7 @@ const downloadFile = (partNumber, fileType) => {
         },
     
         { field: 'subcategory_type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:true, description:'Example:Ceramic Ferrite, MIL-F15733'},
-        { field: 'remarks', headerName: 'Remarks', width: 150,headerAlign:'center', editable:true,description:'Example:Ansivita uyarlaması için programda quality leveli R seçin. ' },
+        { field: 'remarks', headerName: 'Remarks', width: 500 ,headerAlign:'center', editable:true,description:'Example:Ansivita uyarlaması için programda quality leveli R seçin. ' },
 
 
 
@@ -668,14 +672,14 @@ const downloadFile = (partNumber, fileType) => {
         { field: 'failure_rate_type', headerName: 'Failure Rate Type', width: 180 ,headerAlign:'center',editable:false, description:'This field is not editable. Its value is decided according to the value of the MTBF field.'},
       
       
-        { field: 'failure_mode', headerName: 'Failure Mode', width: 120 ,headerAlign:'center', editable:true, ...multilineColumn ,description:'Text is expected for this field. Example:Open, Short, etc.'},
-        { field: 'failure_cause', headerName: 'Failure Cause', width: 150 ,headerAlign:'center', editable:true,description:'Text is expected for this field. Example:High Voltage Transients, High temperature, whisker, Mechanical Stress, Contamination, etc.'},
+        { field: 'failure_mode', headerName: 'Failure Mode', width: 300,headerAlign:'center', editable:true, ...multilineColumn ,description:'Text is expected for this field. Example:Open, Short, etc.'},
+        { field: 'failure_cause', headerName: 'Failure Cause', width: 400 ,headerAlign:'center', editable:true,...multilineColumn, description:'Text is expected for this field. Example:High Voltage Transients, High temperature, whisker, Mechanical Stress, Contamination, etc.'},
         { field: 'failure_mode_ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:true, ...multilineColumn, description:'A value between 0 and 1 is expected for this field. Example:0.29'},
         {
           field: 'related_documents',
           headerName: 'Related Documents',
           description:'Please upload the related documents of the part as a PDF file.',
-          width: 350,
+          width: 400,
           headerAlign: 'center',
           disableExport: true,
           renderCell: (params) => {
@@ -688,7 +692,7 @@ const downloadFile = (partNumber, fileType) => {
                           accept=".pdf"
                       />
                       <span>{relatedDocumentsFileName}</span>
-                      <Button
+                      <Button style={{backgroundColor:'#ac4c5e'}}
                           variant="contained"
                           color="primary"
                           size="small"
@@ -719,7 +723,7 @@ const downloadFile = (partNumber, fileType) => {
             
             onClick={() => saveRow(params.row)}
            
-          style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+          style={{color:'white',backgroundColor:'#4c5fb1',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
           >
           <SaveIcon />
           
@@ -742,7 +746,7 @@ const downloadFile = (partNumber, fileType) => {
             color="secondary"
             size="small"
             onClick={() => deleteRow(params.row)}
-            style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+            style={{color:'white',backgroundColor:'#a10054',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
           >
             <DeleteIcon />
           </Button>
@@ -755,27 +759,31 @@ const downloadFile = (partNumber, fileType) => {
   ];
 
   return (
-  
     <div>
-      <Button variant="contained" onClick={addRow} style={{color:'white',backgroundColor:'purple',fontFamily:"'Montserrat', sans-serif", position: 'relative', left: '6px'}} >
-        Add Row
-      </Button>
+      
+        <Button variant="contained" onClick={addRow} style={{color:'white',backgroundColor:'#6e5773',fontFamily:"'Montserrat', sans-serif", position: 'relative', left: '6px'}}>
+          Add Row
+        </Button>
+      
+  
 
       <div className="h-[500px] w-full bg-white shadow-md rounded-lg overflow-hidden">
         <DataGrid
         
           columns={columns}
           slots={{ 
-              toolbar: GridToolbar,
+              toolbar: CustomToolbar,
               loadingOverlay: LinearProgress,
           
            }}
             
-  
+          
             slotProps={{
               toolbar: {
-                showQuickFilter: true,
-              
+                onFilterChange: (newFilter) => {
+                  // Call your search function here
+                  search(newFilter);
+                },
               },
             }}
           onCellEditStop={(params, event) => {
@@ -815,14 +823,22 @@ const downloadFile = (partNumber, fileType) => {
               
             },
             '& .MuiDataGrid-toolbarContainer button': {
-              color:'purple',
+              color:'#4f323b',
 
 
             },
             '& .MuiDataGrid-toolbarContainer input': {
+              
             
             
             },
+            '& .MuiDataGrid-withBorderColor': {
+              borderColor:'',
+            },
+            fontFamily:"'Montserrat', sans-serif", 
+            fontSize:'14px',
+            backgroundColor:'',
+            
             
           }}
           

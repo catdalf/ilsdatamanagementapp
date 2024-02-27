@@ -35,7 +35,7 @@ const PartNumberAutocomplete = ({ value, onChange, isNew }) => {
                 border: 'none', 
                 width: '100%', 
                 boxSizing: 'border-box',
-                margin: '40px 70px 40px 0px', // Adjust this margin value as needed
+                margin: '40px 130px 40px 0px', // Adjust this margin value as needed
               } 
             }} 
             onBlur={() => onChange(inputValue)}

@@ -6,7 +6,7 @@ import io
 from flask import send_file
 from io import BytesIO
 import mimetypes
-
+import json
 
 
 
@@ -298,6 +298,7 @@ def get_part_numbers():
     except psycopg2.Error as e:
         print("Error fetching part numbers from PostgreSQL:", e)
         return jsonify({'error': 'Failed to fetch part numbers'})
+    
 @app.route('/search', methods=['GET'])
 def search():
     try:
@@ -369,6 +370,46 @@ def search():
     except psycopg2.Error as e:
         print("Error fetching data from PostgreSQL:", e)
         return jsonify({'error': 'Failed to fetch data'})
+    
+@app.route('/autocomplete', methods=['GET'])
+def autocomplete():
+    try:
+        conn = psycopg2.connect(
+            dbname='Failures',
+            user='postgres',
+            password='timberlaker.67',
+            host='localhost',
+            port='5432'
+        )
+        cursor = conn.cursor()
+
+        # Get the filter value from the request parameters
+        filter_value = request.args.get('filter', '')
+
+        # Use the filter value in your SQL query to filter the data
+        query = """
+        SELECT DISTINCT pi.part_number
+        FROM PartIdentification pi
+        WHERE pi.part_number ILIKE %s
+        LIMIT 10"""
+
+        # Execute the query with the parameters
+        cursor.execute(query, ("%" + filter_value + "%",))
+        data = cursor.fetchall()
+
+        # Flatten the list of tuples into a single list
+        suggestions = [item[0] for item in data]
+
+        cursor.close()
+        conn.close()
+
+        # Return JSON response
+        return jsonify(suggestions)
+
+    except psycopg2.Error as e:
+        print("Error fetching data from PostgreSQL:", e)
+        return jsonify({'error': 'Failed to fetch data'})
+
 
 
 

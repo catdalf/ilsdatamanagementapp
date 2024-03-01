@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { Button } from '@mui/material';
 import * as XLSX from 'xlsx';
+import GetAppIcon from '@mui/icons-material/GetApp';
 
 function ExcelToDataGrid() {
   const [columns, setColumns] = useState([]);
@@ -41,6 +42,46 @@ function ExcelToDataGrid() {
     };
     reader.readAsBinaryString(file);
   };
+  const exportToExcel = (data, filename, columnWidth) => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    worksheet['!cols'] = Array(columnWidth).fill().map(() => ({wch: 20}));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    XLSX.writeFile(workbook, filename);
+  }
+  const exportFMECAStudies = () => {
+    const filteredData = rows.map(row => ({
+      'Part Number': row.part_number,
+      'BILGEM Part Number': row.bilgem_part_number,
+      'Description': row.description,
+      'Failure Mode': row.failure_mode,
+      'Failure Cause': row.failure_cause,
+      'Finishing Material': row.finishing_material,
+      'Failure Mode Ratio': row.failure_mode_ratio,
+      'Failure Rate': row.failure_rate
+    }));
+    exportToExcel(filteredData, "FMECA_Studies.xlsx",8);
+  }
+  const exportMTBFCalculations = () => {
+    const filteredData = rows.map(row => ({
+      'Level': '', 
+      'Identifier': '', 
+      'Name': row.part_name,
+      'Part Number': row.part_number,
+      'Quantity': '',
+      'Manufacturer': row.manufacturer,
+      'Category': row.category,
+      'Subcategory': row.subcategory,
+      'Remarks': row.remarks,
+      'Description': row.description,
+      'MTBF Specified': row.mtbf_value,
+      'Failure Rate Type': row.failure_rate_type,
+      'Part Classification': 'General',
+      'Part': '', 
+      'Model': ''
+    }));
+    exportToExcel(filteredData, "MTBF_Calculations.xlsx",15);
+  }
 
   return (
     <div style={{ height: 400, width: '100%' }}>
@@ -51,6 +92,20 @@ function ExcelToDataGrid() {
       >
         Upload File
         <input type="file" hidden onChange={handleFileUpload} />
+      </Button>
+      <Button 
+        startIcon={<GetAppIcon />} 
+        onClick={exportFMECAStudies} 
+        style={{ marginBottom: '10px', fontSize: '0.8rem' }}
+      >
+        Export for FMECA Studies
+      </Button>
+      <Button 
+        startIcon={<GetAppIcon />} 
+        onClick={exportMTBFCalculations} 
+        style={{ marginBottom: '10px', fontSize: '0.8rem' }}
+      >
+        Export for MTBF Calculations
       </Button>
       <DataGrid rows={rows} columns={columns} pageSize={5} />
     </div>

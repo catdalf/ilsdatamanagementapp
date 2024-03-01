@@ -5,6 +5,7 @@ import TextField from '@mui/material/TextField';
 const PartNumberAutocomplete = ({ value, onChange, isNew }) => {
   const [partNumbers, setPartNumbers] = useState([]);
   const [inputValue, setInputValue] = useState(value || '');
+  
 
   useEffect(() => {
     fetch('http://localhost:5000/get_part_numbers')
@@ -16,6 +17,7 @@ const PartNumberAutocomplete = ({ value, onChange, isNew }) => {
   if (isNew) {
     return (
       <Autocomplete
+        
         options={partNumbers}
         freeSolo
         value={value || ''}
@@ -27,6 +29,7 @@ const PartNumberAutocomplete = ({ value, onChange, isNew }) => {
         }}
         renderInput={(params) => (
           <TextField 
+          
             {...params} 
             variant="standard" 
             InputProps={{ 
@@ -51,7 +54,11 @@ const PartNumberAutocomplete = ({ value, onChange, isNew }) => {
               width: '300px', // Adjust this width as needed
             },
           },
+        
         }}
+        
+        
+        
       />
     );
   } else {

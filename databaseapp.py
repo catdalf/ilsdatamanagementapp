@@ -2,11 +2,8 @@ from flask import Flask,jsonify,request,send_file, Response
 import psycopg2
 from flask_cors import CORS
 import base64
-import io
 from flask import send_file
 from io import BytesIO
-import mimetypes
-import json
 
 
 

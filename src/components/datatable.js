@@ -23,8 +23,7 @@ const DataTable = (params) => {
   const [data, setData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [datasheetFileName, setDatasheetFileName] = useState('');
-  const [relatedDocumentsFileName, setRelatedDocumentsFileName] = useState('');
+  
   
   
   
@@ -128,9 +127,9 @@ const processRowUpdate = (updatedRow, originalRow) => {
   return updatedRow;
 };
 
-  //Purpose of EditTextArea is to make the cell editable with a pop-up window
-  //This is a custom component for the DataGrid
-  //It is used in the renderEditCell property of the column definition
+  
+//Purpose of EditTextArea is to make the cell editable with a pop-up window
+  
   
   function EditTextarea(props) {
     const { id, field, value, colDef, hasFocus } = props;
@@ -265,9 +264,11 @@ const processRowUpdate = (updatedRow, originalRow) => {
         !row.failure_mode_ratio ||
         !(row.related_documents instanceof File) 
     ) {
+        
         alert('Please fill all of the fields!');
+        
         return;
-
+        
     }
 
     const formData = new FormData();
@@ -375,11 +376,6 @@ const handleFileChange = (event, params, field) => {
   // Update the row data with the file object
   params.api.updateRows([{ id: params.id, [field]: file }]);
 
-  if (field ==='datasheet') {
-    setDatasheetFileName(file.name);
-  } else if (field === 'related_documents') {
-    setRelatedDocumentsFileName(file.name);
-  }
 };
 const downloadFile = (partNumber, fileType) => {
   setIsLoading(true); 
@@ -481,6 +477,7 @@ const downloadFile = (partNumber, fileType) => {
           description: 'This field may contain text-number mixture of values. Example: CL03A104KO3NNNC',
           renderEditCell: (params) => (
             <PartNumberAutocomplete
+              
               value={params.value}
               onChange={(newValue) => params.api.setEditCellValue({ id: params.id, field: params.field, value: newValue }, params.event)}
               isNew={params.row.isNew}
@@ -489,7 +486,7 @@ const downloadFile = (partNumber, fileType) => {
 
         },
         { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:true, description:'Number is expected for this field. Example: 300006936' },
-        { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true , description:'Text is expected for this field. Example: SAMSUNG'},
+        { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:true , ...multilineColumn, description:'Text is expected for this field. Example: SAMSUNG'},
         {
           field: 'datasheet',
           headerName: 'Datasheet',
@@ -506,7 +503,7 @@ const downloadFile = (partNumber, fileType) => {
                           name="datasheet"
                           accept=".pdf"
                       />
-                      <span>{datasheetFileName}</span>
+                      
                       <Button style={{backgroundColor:'#ac4c5e'}}
                           variant="contained"
                           color="primary"
@@ -691,7 +688,7 @@ const downloadFile = (partNumber, fileType) => {
                           name="related_documents"
                           accept=".pdf"
                       />
-                      <span>{relatedDocumentsFileName}</span>
+                      
                       <Button style={{backgroundColor:'#ac4c5e'}}
                           variant="contained"
                           color="primary"
@@ -771,19 +768,18 @@ const downloadFile = (partNumber, fileType) => {
         <DataGrid
         
           columns={columns}
-          slots={{ 
-              toolbar: CustomToolbar,
-              loadingOverlay: LinearProgress,
-          
-           }}
-            
-          
+        
+          slots={{
+            toolbar: () => <CustomToolbar data={data} />,
+            loadingOverlay: LinearProgress,
+          }}
             slotProps={{
               toolbar: {
                 onFilterChange: (newFilter) => {
                   // Call your search function here
                   search(newFilter);
                 },
+              
               },
             }}
           onCellEditStop={(params, event) => {

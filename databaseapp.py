@@ -4,7 +4,8 @@ from flask_cors import CORS
 import base64
 from flask import send_file
 from io import BytesIO
-
+import pandas as pd
+import openpyxl
 
 
 dbname = 'Failures'
@@ -406,6 +407,83 @@ def autocomplete():
     except psycopg2.Error as e:
         print("Error fetching data from PostgreSQL:", e)
         return jsonify({'error': 'Failed to fetch data'})
+    
+@app.route('/import', methods=['POST'])
+def import_data():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    try:
+        # Load the Excel file
+        df = pd.read_excel(file, engine='openpyxl')
+        df.columns = df.columns.str.strip()
+
+        # Validate the data: check that all fields are present
+        fields = ['part_name', 'part_number', 'bilgem_part_number', 'manufacturer', 'description', 'stock_information', 'category', 'subcategory', 'subcategory_type', 'remarks', 'mtbf_value', 'condition_environment_info', 'condition_confidence_level', 'condition_temperature_value', 'finishing_material', 'mtbf', 'failure_rate', 'failure_rate_type', 'failure_mode', 'failure_cause', 'failure_mode_ratio']
+        if not all(field in df.columns for field in fields):
+            return jsonify({'error': 'Missing data'}), 400
+
+        # Connect to the database
+        conn = psycopg2.connect(
+            dbname='Failures',
+            user='postgres',
+            password='timberlaker.67',
+            host='localhost',
+            port='5432'
+        )
+        cursor = conn.cursor()
+
+        # Insert the data into the database
+        for index, row in df.iterrows():
+            # Check if part number already exists
+            cursor.execute("SELECT 1 FROM PartIdentification WHERE part_number = %s", (row['part_number'],))
+            if cursor.fetchone():
+                continue  # Skip this row and continue with the next one
+
+            # Insert the new row into the database
+            cursor.execute("""
+            INSERT INTO PartIdentification (part_name, part_number, bilgem_part_number, manufacturer, description, stock_information)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """, (row['part_name'], row['part_number'], row['bilgem_part_number'], row['manufacturer'], row['description'], row['stock_information']))
+
+            cursor.execute("""
+            INSERT INTO PartCategorization (part_number, category, subcategory, subcategory_type, remarks)
+            VALUES (%s, %s, %s, %s, %s)
+            """, (row['part_number'], row['category'], row['subcategory'], row['subcategory_type'], row['remarks']))
+
+            cursor.execute("""
+            INSERT INTO ManufacturerInformation (part_number, mtbf_value, condition_environment_info, condition_confidence_level, condition_temperature_value, finishing_material)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """, (row['part_number'], row['mtbf_value'], row['condition_environment_info'], row['condition_confidence_level'], row['condition_temperature_value'], row['finishing_material']))
+
+            cursor.execute("""
+            INSERT INTO ReliabilityParameters (part_number, mtbf, failure_rate, failure_rate_type)
+            VALUES (%s, %s, %s, %s)
+            """, (row['part_number'], row['mtbf'], row['failure_rate'], row['failure_rate_type']))
+
+            cursor.execute("""
+            INSERT INTO FailureInformation (part_number, failure_mode, failure_cause, failure_mode_ratio)
+            VALUES (%s, %s, %s, %s)
+            """, (row['part_number'], row['failure_mode'], row['failure_cause'], row['failure_mode_ratio']))
+
+            # Insert the new row into the database
+            # Add similar insert statements for other tables...
+        
+                               
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({'success': 'Data imported successfully'})
+
+    except Exception as e:
+        print("Error importing data:", e)
+        return jsonify({'error': 'Failed to import data'}), 500
 
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import axios from 'axios';
@@ -6,13 +6,15 @@ import { GridToolbarContainer, GridToolbarColumnsButton, GridToolbarDensitySelec
 import SearchIcon from '@mui/icons-material/Search';
 import InputAdornment from '@mui/material/InputAdornment';
 import Button from '@mui/material/Button';
-import GetAppIcon from '@mui/icons-material/GetApp';
 import Box from '@mui/material/Box';
 import * as XLSX from 'xlsx';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 function CustomToolbar(props) {
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
+  const fileInputRefMTBF = useRef(null);
+  const fileInputRefFMECA = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -46,40 +48,101 @@ function CustomToolbar(props) {
     XLSX.writeFile(workbook, filename);
   }
 
-  const exportFMECAStudies = () => {
-    const filteredData = props.data.map(row => ({
-      'Part Number': row.part_number,
-      'BILGEM Part Number': row.bilgem_part_number,
-      'Description': row.description,
-      'Failure Mode': row.failure_mode,
-      'Failure Cause': row.failure_cause,
-      'Finishing Material': row.finishing_material,
-      'Failure Mode Ratio': row.failure_mode_ratio,
-      'Failure Rate': row.failure_rate
-    }));
-    exportToExcel(filteredData, "FMECA_Studies.xlsx",8);
-  }
+  const handleFMECAFileUpload = (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const bstr = evt.target.result;
+      const workbook = XLSX.read(bstr, { type: 'binary' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const excelData = XLSX.utils.sheet_to_json(worksheet);
+      
+      console.log('Excel data:', excelData);
+
+      const filteredData = props.data.filter(row => {
+        return excelData.some(excelRow => {
+          const isMatch = excelRow['MANUFACTURER_PN1'].trim() === row.part_number.trim() &&
+                excelRow['BILGEM_PN'].toString().trim() === row.bilgem_part_number.replace(/"/g, '').trim() &&
+                excelRow['Description'].trim() === row.description.trim();
+      
+          if (!isMatch) {
+            console.log('Excel row:', excelRow);
+            console.log('Data row:', row);
+          }
+      
+          return isMatch;
+        });
+      });
+      
   
-  const exportMTBFCalculations = () => {
-    const filteredData = props.data.map(row => ({
-      'Level': '', 
-      'Identifier': '', 
-      'Name': row.part_name,
-      'Part Number': row.part_number,
-      'Quantity': '',
-      'Manufacturer': row.manufacturer,
-      'Category': row.category,
-      'Subcategory': row.subcategory,
-      'Remarks': row.remarks,
-      'Description': row.description,
-      'MTBF Specified': row.mtbf_value,
-      'Failure Rate Type': row.failure_rate_type,
-      'Part Classification': 'General',
-      'Part': '', 
-      'Model': ''
-    }));
-    exportToExcel(filteredData, "MTBF_Calculations.xlsx",15);
-  }
+      if (filteredData.length > 0) {
+        const exportData = filteredData.map(row => ({
+          'Part Number': row.part_number,
+          'BILGEM Part Number': row.bilgem_part_number,
+          'Description': row.description,
+          'Failure Mode': row.failure_mode,
+          'Failure Cause': row.failure_cause,
+          'Finishing Material': row.finishing_material,
+          'Failure Mode Ratio': row.failure_mode_ratio,
+          'Failure Rate': row.failure_rate
+        }));
+        exportToExcel(exportData, "FMECA_Studies.xlsx",8);
+      }
+    };
+    reader.readAsBinaryString(file);
+    event.target.value = null;
+  };
+
+  const handleMTBFFileUpload = (event) => {
+    console.log('MTBF file upload');
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const bstr = evt.target.result;
+      const workbook = XLSX.read(bstr, { type: 'binary' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const excelData = XLSX.utils.sheet_to_json(worksheet);
+  
+      const filteredData = props.data.filter(row => {
+        return excelData.some(excelRow => {
+          return excelRow['MANUFACTURER_PN1'].trim() === row.part_number.trim() &&
+                 excelRow['BILGEM_PN'].toString().trim() === row.bilgem_part_number.replace(/"/g, '').trim() &&
+                 excelRow['Description'].trim() === row.description.trim();
+        });
+      });
+  
+      if (filteredData.length > 0) {
+        const exportData = filteredData.map(row => ({
+          'Level': '', 
+          'Identifier': '', 
+          'Name': row.part_name,
+          'Part Number': row.part_number,
+          'Quantity': '',
+          'Manufacturer': row.manufacturer,
+          'Category': row.category,
+          'Subcategory': row.subcategory,
+          'Remarks': row.remarks,
+          'Description': row.description,
+          'MTBF Specified': row.mtbf_value,
+          'Failure Rate Type': row.failure_rate_type,
+          'Part Classification': 'General',
+          'Part': '', 
+          'Model': ''
+        }));
+        exportToExcel(exportData, "MTBF_Calculations.xlsx",15);
+      }
+    };
+    reader.readAsBinaryString(file);
+    event.target.value=null;
+  };
+
+  const handleValidateAndExportMTBFClick = () => {
+    fileInputRefMTBF.current.click();
+  };
+  
+  const handleExportFMECAClick = () => {
+    fileInputRefFMECA.current.click();
+  };
 
   return (
     <GridToolbarContainer>
@@ -87,19 +150,33 @@ function CustomToolbar(props) {
         <GridToolbarColumnsButton/>
         <GridToolbarDensitySelector />
         <Button 
-        startIcon={<GetAppIcon />} 
-        onClick={exportFMECAStudies} 
-        sx={{ fontSize: '0.8rem' }}
-      >
-        Export for FMECA Studies
-      </Button>
-      <Button 
-        startIcon={<GetAppIcon />} 
-        onClick={exportMTBFCalculations} 
-        sx={{ fontSize: '0.8rem' }}
-      >
-        Export for MTBF Calculations
-      </Button>
+          startIcon={<UploadFileIcon />} 
+          onClick={handleExportFMECAClick} 
+          sx={{ fontSize: '0.8rem' }}
+        >
+          Upload BOM for Exporting FMECA Studies Excel File
+        </Button>
+        <input
+          type="file"
+          ref={fileInputRefFMECA}
+          style={{ display: 'none' }}
+          accept=".xlsx,.xls"
+          onChange={handleFMECAFileUpload}
+        />
+        <Button 
+          startIcon={<UploadFileIcon />} 
+          onClick={handleValidateAndExportMTBFClick} 
+          sx={{ fontSize: '0.8rem' }}
+        >
+          Upload BOM for Exporting MTBF Calculations Excel File
+        </Button>
+        <input
+          type="file"
+          ref={fileInputRefMTBF}
+          style={{ display: 'none' }}
+          accept=".xlsx,.xls"
+          onChange={handleMTBFFileUpload}
+        />
       </Box>
       <Autocomplete
         noOptionsText={`No matching values.
@@ -107,9 +184,9 @@ function CustomToolbar(props) {
         forcePopupIcon={false}
         options={options}
         onInputChange={(event, newInputValue) => {
-            setInputValue(newInputValue);
-            props.onFilterChange([newInputValue]); 
-        }}
+          setInputValue(newInputValue);
+          props.onFilterChange([newInputValue]); 
+      }}
         renderInput={(params) => (
           <TextField 
             {...params} 
@@ -138,6 +215,5 @@ function CustomToolbar(props) {
       />
     </GridToolbarContainer>
   );
-}
-
-export default CustomToolbar;
+  }
+  export default CustomToolbar;

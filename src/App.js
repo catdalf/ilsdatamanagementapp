@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import DataTable from './components/datatable'; 
 import Sidebar from './components/sidebar'; 
 import Home from './components/home'; 
-import Import from './components/import'; 
 import './tailwind.css';
 import './styles.css';
 
@@ -19,8 +18,6 @@ function App() {
         return <Home />;
       case 'Data Table':
         return <DataTable />;
-      case 'Import':
-        return <Import />;
       default:
         return <Home />;
     }

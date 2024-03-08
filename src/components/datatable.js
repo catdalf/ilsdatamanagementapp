@@ -23,11 +23,9 @@ const DataTable = (params) => {
   const [data, setData] = useState([]);
   const [rowCount, setRowCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [importFile, setImportFile] = useState(null);
   
   
-  
-  
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -45,19 +43,24 @@ const DataTable = (params) => {
   };
 
   const search = async (filterValue) => {
+    console.log('search function called with filterValue:', filterValue);
     setIsLoading(true);
     try {
       const response = await axios.get('http://localhost:5000/search', {
         params: { filter: filterValue.join(' ') }, // Join the array into a single string
         withCredentials: true
       });
+      console.log('response from server:', response);
       const rowsWithIds = response.data.map(row => ({ id: row.part_number, ...row }));
       setData(rowsWithIds);
+      console.log('data state after setData:', data);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
     setIsLoading(false);
   };
+  
+
   
 
   function isKeyboardEvent(event) {
@@ -232,6 +235,17 @@ const processRowUpdate = (updatedRow, originalRow) => {
     setRowCount((prevCount) => prevCount + 1); // Increment the counter
     
   };
+  const cancelAddRow = () => {
+    setData((prevData) => {
+      if (prevData.length > 0) {
+        const lastRow = prevData[prevData.length - 1];
+        if (lastRow.isNew) {
+          return prevData.slice(0, -1); // Remove the last row
+        }
+      }
+      return prevData; // If there's no new row, return the data as is
+    });
+  };
   
 
   const saveRow = (row, setState) => {
@@ -311,7 +325,7 @@ const processRowUpdate = (updatedRow, originalRow) => {
         });
     
     };
-  const deleteRow= (row) => {
+  const deleteRow = (row) => {
     setIsLoading(true);
     fetch('http://localhost:5000/delete_row', {
         method: 'DELETE',
@@ -366,6 +380,36 @@ const processRowUpdate = (updatedRow, originalRow) => {
       .finally(() => {
         setIsLoading(false);
       });
+  };
+  
+  
+  const importData = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = (event) => {
+      setImportFile(event.target.files[0]);
+  
+      const formData = new FormData();
+      formData.append('file', event.target.files[0]);
+  
+      axios.post('http://localhost:5000/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      .then(response => {
+        if (response.data.error) {
+          alert('Failed to import data:' + response.data.error);
+        } else {
+          alert('Data imported successfully!');
+          fetchData(); // Fetch the data again to update the table
+        }
+      })
+      .catch(error => {
+        console.error(error);
+      });
+    };
+    input.click();
   };
       
 const handleFileChange = (event, params, field) => {
@@ -504,13 +548,13 @@ const downloadFile = (partNumber, fileType) => {
                           accept=".pdf"
                       />
                       
-                      <Button style={{backgroundColor:'#ac4c5e'}}
+                      <Button style={{backgroundColor:'#005c5a'}}
                           variant="contained"
                           color="primary"
                           size="small"
                           onClick={() => downloadFile(params.row.part_number, 'datasheet')}
                       >
-                      <FileDownloadIcon />
+                      <FileDownloadIcon style={{color:'#d3d3d3'}}/>
                       </Button>
                   </div>
               );
@@ -689,13 +733,13 @@ const downloadFile = (partNumber, fileType) => {
                           accept=".pdf"
                       />
                       
-                      <Button style={{backgroundColor:'#ac4c5e'}}
+                      <Button style={{backgroundColor:'#005c5a'}}
                           variant="contained"
                           color="primary"
                           size="small"
                           onClick={() => downloadFile(params.row.part_number, 'related_documents')}
                       >
-                          <FileDownloadIcon />
+                      <FileDownloadIcon style={{color:'#d3d3d3'}}/>
                       </Button>
                   </div>
               );
@@ -720,7 +764,7 @@ const downloadFile = (partNumber, fileType) => {
             
             onClick={() => saveRow(params.row)}
            
-          style={{color:'white',backgroundColor:'#4c5fb1',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+          style={{color:'white',backgroundColor:'#35495e',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
           >
           <SaveIcon />
           
@@ -743,9 +787,9 @@ const downloadFile = (partNumber, fileType) => {
             color="secondary"
             size="small"
             onClick={() => deleteRow(params.row)}
-            style={{color:'white',backgroundColor:'#a10054',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+            style={{color:'white',backgroundColor:'#6b1c23',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
           >
-            <DeleteIcon />
+            <DeleteIcon style={{color:''}} />
           </Button>
         )
       },
@@ -757,10 +801,20 @@ const downloadFile = (partNumber, fileType) => {
 
   return (
     <div>
-      
-        <Button variant="contained" onClick={addRow} style={{color:'white',backgroundColor:'#6e5773',fontFamily:"'Montserrat', sans-serif", position: 'relative', left: '6px'}}>
+       
+      <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+        
+        <Button variant="contained" onClick={addRow} sx={{color:'white',backgroundColor:'#2ab39e',fontFamily:"'Montserrat', sans-serif", marginLeft:'5px', fontSize:'14px', '&:hover': { backgroundColor:'#007d8d'} }}>
           Add Row
         </Button>
+        <Button variant="contained" onClick={cancelAddRow} sx={{color:'white',backgroundColor:'#808080',fontFamily:"'Montserrat', sans-serif", marginLeft:'15px'}}>
+          Cancel
+        </Button>
+        <Paper elevation={1}  sx={{ marginLeft: '15px', marginRight: '15px', height: '40px', width: '2px', backgroundColor:'#ff6473'}} />
+        <Button variant="contained" onClick={importData} sx={{color:'white', backgroundColor:'#495867', fontFamily:"'Montserrat', sans-serif", marginLeft:'15px'}}>
+          Import
+        </Button>
+      </Box>
       
   
 
@@ -770,16 +824,16 @@ const downloadFile = (partNumber, fileType) => {
           columns={columns}
         
           slots={{
-            toolbar: () => <CustomToolbar data={data} />,
+            toolbar: CustomToolbar,
             loadingOverlay: LinearProgress,
           }}
-            slotProps={{
-              toolbar: {
+          slotProps={{
+            toolbar: {
                 onFilterChange: (newFilter) => {
                   // Call your search function here
                   search(newFilter);
                 },
-              
+              data: data,
               },
             }}
           onCellEditStop={(params, event) => {
@@ -798,7 +852,7 @@ const downloadFile = (partNumber, fileType) => {
           rowHeight={40}
           checkboxSelection
           pageSize={10}
-          pageSizeOptions={[4,10, 25,100]}
+          pageSizeOptions={[5,10, 25,100]}
           disableRowSelectionOnClick
           experimentalFeatures={{ columnGrouping: true }}
           columnGroupingModel={columnGroupingModel}
@@ -833,7 +887,8 @@ const downloadFile = (partNumber, fileType) => {
             },
             fontFamily:"'Montserrat', sans-serif", 
             fontSize:'14px',
-            backgroundColor:'',
+            backgroundColor:'',//Eğer tablonun arka plan rengi değiştirilmek istenirse buradan değiştirilebilir.
+            
             
             
           }}

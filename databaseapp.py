@@ -5,7 +5,7 @@ import base64
 from flask import send_file
 from io import BytesIO
 import pandas as pd
-from werkzeug.security import generate_password_hash, check_password_hash
+
 
 
 dbname = 'Failures'

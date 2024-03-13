@@ -5,7 +5,7 @@ import base64
 from flask import send_file
 from io import BytesIO
 import pandas as pd
-import openpyxl
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 dbname = 'Failures'
@@ -484,6 +484,10 @@ def import_data():
     except Exception as e:
         print("Error importing data:", e)
         return jsonify({'error': 'Failed to import data'}), 500
+    
+
+    
+
 
 
 

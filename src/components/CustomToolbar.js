@@ -76,16 +76,25 @@ function CustomToolbar(props) {
       
   
       if (filteredData.length > 0) {
-        const exportData = filteredData.map(row => ({
-          'Part Number': row.part_number,
-          'BILGEM Part Number': row.bilgem_part_number,
-          'Description': row.description,
-          'Failure Mode': row.failure_mode,
-          'Failure Cause': row.failure_cause,
-          'Finishing Material': row.finishing_material,
-          'Failure Mode Ratio': row.failure_mode_ratio,
-          'Failure Rate': row.failure_rate
-        }));
+        let exportData = [];
+        filteredData.forEach(row => {
+          const failureModes = row.failure_mode.split('\n');
+          const failureCauses = row.failure_cause.split('\n');
+          const failureModeRatios = row.failure_mode_ratio.split('\n');
+      
+          failureModes.forEach((failureMode, index) => {
+            exportData.push({
+              'Part Number': row.part_number,
+              'BILGEM Part Number': row.bilgem_part_number,
+              'Description': row.description,
+              'Failure Mode': failureMode,
+              'Failure Cause': failureCauses[index],
+              'Finishing Material': row.finishing_material,
+              'Failure Mode Ratio': failureModeRatios[index],
+              'Failure Rate': row.failure_rate
+            });
+          });
+        });
         exportToExcel(exportData, "FMECA_Studies.xlsx",8);
       }
     };
@@ -112,23 +121,30 @@ function CustomToolbar(props) {
       });
   
       if (filteredData.length > 0) {
-        const exportData = filteredData.map(row => ({
-          'Level': '', 
-          'Identifier': '', 
-          'Name': row.part_name,
-          'Part Number': row.part_number,
-          'Quantity': '',
-          'Manufacturer': row.manufacturer,
-          'Category': row.category,
-          'Subcategory': row.subcategory,
-          'Remarks': row.remarks,
-          'Description': row.description,
-          'MTBF Specified': row.mtbf_value,
-          'Failure Rate Type': row.failure_rate_type,
-          'Part Classification': 'General',
-          'Part': '', 
-          'Model': ''
-        }));
+        let exportData = [];
+        filteredData.forEach(row => {
+          const manufacturers = row.manufacturer.split('\n');
+      
+          manufacturers.forEach(manufacturer => {
+            exportData.push({
+              'Level': '', 
+              'Identifier': '', 
+              'Name': row.part_name,
+              'Part Number': row.part_number,
+              'Quantity': '',
+              'Manufacturer': manufacturer,
+              'Category': row.category,
+              'Subcategory': row.subcategory,
+              'Remarks': row.remarks,
+              'Description': row.description,
+              'MTBF Specified': row.mtbf_value,
+              'Failure Rate Type': row.failure_rate_type,
+              'Part Classification': 'General',
+              'Part': '', 
+              'Model': ''
+            });
+          });
+        });
         exportToExcel(exportData, "MTBF_Calculations.xlsx",15);
       }
     };

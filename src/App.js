@@ -7,9 +7,11 @@ import './tailwind.css';
 import './styles.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRouteWrapper from './components/PrivateRoute'; 
+import RoleContext from './RoleContext'; 
 
 function App() {
   const [currentPage, setCurrentPage] = useState('Home');
+  const [role, setRole] = useState(null); // add a new state variable for the role
 
   const handleSidebarItemClick = (page) => {
     setCurrentPage(page);
@@ -27,23 +29,25 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="App">
-        <Sidebar handleSidebarItemClick={handleSidebarItemClick} />
-        <div className="content">
-          <Routes>
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/home" element={
-              <PrivateRouteWrapper>
-                {renderPage()}
-              </PrivateRouteWrapper>
-            } />
-            <Route path="/" element={<Navigate to="/signin" />} />
-            <Route path="*" element={<div>404 Not Found</div>} />
-          </Routes>
+    <RoleContext.Provider value={{ role, setRole }}> {/* wrap your app in the provider */}
+      <Router>
+        <div className="App">
+          <Sidebar handleSidebarItemClick={handleSidebarItemClick} />
+          <div className="content">
+            <Routes>
+            <Route path="/signin" element={<SignIn setRole={setRole} />} />
+              <Route path="/home" element={
+                <PrivateRouteWrapper>
+                  {renderPage()}
+                </PrivateRouteWrapper>
+              } />
+              <Route path="/" element={<Navigate to="/signin" />} />
+              <Route path="*" element={<div>404 Not Found</div>} />
+            </Routes>
+          </div>
         </div>
-      </div>
-    </Router>
+      </Router>
+    </RoleContext.Provider>
   );
 }
 

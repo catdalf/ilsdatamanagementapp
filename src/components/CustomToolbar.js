@@ -15,6 +15,7 @@ function CustomToolbar(props) {
   const [options, setOptions] = useState([]);
   const fileInputRefMTBF = useRef(null);
   const fileInputRefFMECA = useRef(null);
+  const {role} = props;
 
   useEffect(() => {
     let active = true;
@@ -169,6 +170,7 @@ function CustomToolbar(props) {
           startIcon={<UploadFileIcon />} 
           onClick={handleExportFMECAClick} 
           sx={{ fontSize: '0.8rem' }}
+          disabled={props.role === 'casual'}
         >
           Upload BOM for Exporting FMECA Studies Excel File
         </Button>
@@ -178,11 +180,13 @@ function CustomToolbar(props) {
           style={{ display: 'none' }}
           accept=".xlsx,.xls"
           onChange={handleFMECAFileUpload}
+          disabled={props.role === 'casual'}
         />
         <Button 
           startIcon={<UploadFileIcon />} 
           onClick={handleValidateAndExportMTBFClick} 
           sx={{ fontSize: '0.8rem' }}
+          disabled={props.role === 'casual'}
         >
           Upload BOM for Exporting MTBF Calculations Excel File
         </Button>
@@ -192,6 +196,7 @@ function CustomToolbar(props) {
           style={{ display: 'none' }}
           accept=".xlsx,.xls"
           onChange={handleMTBFFileUpload}
+          disabled={props.role === 'casual'}
         />
       </Box>
       <Autocomplete

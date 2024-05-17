@@ -16,7 +16,8 @@ import LinearProgress from '@mui/material/LinearProgress';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import PartNumberAutocomplete from './PartNumberAutocomplete';
 import CustomToolbar from './CustomToolbar';
-import RoleContext from '../RoleContext'; 
+import UserContext from '../UserContext';
+
 
 
 
@@ -25,8 +26,12 @@ const DataTable = (params) => {
   const [rowCount, setRowCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [importFile, setImportFile] = useState(null);
-  const { role } = useContext(RoleContext); 
+  const [role] = useContext(UserContext);
   
+
+  useEffect(() => {
+    console.log('Role:', role);
+  }, [role]);
    
   useEffect(() => {
     fetchData();
@@ -125,7 +130,7 @@ const processRowUpdate = (updatedRow, originalRow) => {
   }
 
   if (JSON.stringify(updatedRow) !== JSON.stringify(originalRow)) {
-    if(!updatedRow.isNew) {
+    if(!originalRow.isNew) {
     updateRow(updatedRow);
   }
 }
@@ -513,13 +518,13 @@ const downloadFile = (partNumber, fileType) => {
 
   const columns = [
         
-        { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:role !=='casual', description:'Text is expected for this field. Example: Resistor, Capacitor, etc.'},
+        { field: 'part_name', headerName: 'Part Name', width: 150,headerAlign:'center', editable:role ==='admin',description:'Text is expected for this field. Example: Resistor, Capacitor, etc.'},
         {
           field: 'part_number',
           headerName: 'Part Number',
           width: 220,
           headerAlign: 'center',
-          editable: role !== 'casual',
+          editable:role ==='admin',
           description: 'This field may contain text-number mixture of values. Example: CL03A104KO3NNNC',
           renderEditCell: (params) => (
             <PartNumberAutocomplete
@@ -531,8 +536,8 @@ const downloadFile = (partNumber, fileType) => {
           ),
 
         },
-        { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable: role!=='casual', description:'Number is expected for this field. Example: 300006936' },
-        { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable: role!=='casual' , ...multilineColumn, description:'Text is expected for this field. Example: SAMSUNG'},
+        { field: 'bilgem_part_number', headerName: 'BILGEM Part Number', width: 180,headerAlign:'center', editable:role ==='admin', description:'Number is expected for this field. Example: 300006936' },
+        { field: 'manufacturer', headerName: 'Manufacturer', width: 150,headerAlign:'center', editable:role ==='admin', ...multilineColumn, description:'Text is expected for this field. Example: SAMSUNG'},
         {
           field: 'datasheet',
           headerName: 'Datasheet',
@@ -543,8 +548,8 @@ const downloadFile = (partNumber, fileType) => {
           renderCell: (params) => {
               return (
                   <div>
-                    {role !== 'casual' && (
-                      <>
+                    {role ==='admin' && (
+                    <>                   
                       <input
                           type="file"
                           onChange={(event) => handleFileChange(event, params, 'datasheet')}
@@ -552,9 +557,8 @@ const downloadFile = (partNumber, fileType) => {
                           accept=".pdf"
                       />
                       </>
-                      )}
-                      {role !== 'casual' && (
-                      <>
+                    )}
+                      
                         <Button style={{backgroundColor:'#005c5a'}}
                             variant="contained"
                             color="primary"
@@ -563,8 +567,7 @@ const downloadFile = (partNumber, fileType) => {
                         >
                         <FileDownloadIcon style={{color:'#d3d3d3'}}/>
                         </Button>
-                      </>
-                      )}
+                    
                   </div>
               );
           },
@@ -577,7 +580,7 @@ const downloadFile = (partNumber, fileType) => {
           description: 'Example:CAP CER 39pF 25V 2% NP0 0201',
           width: 220,
           headerAlign: 'center',
-          editable:role!=='casual',
+          editable:role ==='admin',
         },
         
         { field: 'stock_information',
@@ -585,7 +588,7 @@ const downloadFile = (partNumber, fileType) => {
          description: 'Example: 1000 pieces in stock.',
           width: 180,
           headerAlign:'center',
-          editable:role!=='casual' },
+          editable:role ==='admin' },
       
         {
           field: 'category',
@@ -595,7 +598,7 @@ const downloadFile = (partNumber, fileType) => {
           headerAlign: 'center',
           type:'singleSelect',
           valueOptions: ['Resistor','Capacitor','Switching Device','Connection','Inductor','Miscellaneous','Integrated Circuit','Semiconductor','Optical Device','Relay','Rotating Device','Software','Mechanical Part'],
-          editable: role!=='casual',
+          editable:role ==='admin',
           
           renderCell: ({ value }) => (
             <Box
@@ -617,7 +620,7 @@ const downloadFile = (partNumber, fileType) => {
           description:'Please select the subcategory of the part from the dropdown menu.',
           width: 240,
           headerAlign: 'center',
-          editable:role!=='casual',
+          editable:role ==='admin',
           type: 'singleSelect',
           valueOptions: ({row}) => {
             
@@ -662,12 +665,12 @@ const downloadFile = (partNumber, fileType) => {
           ),
         },
     
-        { field: 'subcategory_type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:role!=='casual', description:'Example:Ceramic Ferrite, MIL-F15733'},
-        { field: 'remarks', headerName: 'Remarks', width: 500 ,headerAlign:'center', editable:role !=='casual',description:'Example:Ansivita uyarlaması için programda quality leveli R seçin. ' },
+        { field: 'subcategory_type', headerName: 'Subcategory Type', width: 180 ,headerAlign:'center', editable:role ==='admin', description:'Example:Ceramic Ferrite, MIL-F15733'},
+        { field: 'remarks', headerName: 'Remarks', width: 500 ,headerAlign:'center', editable:role ==='admin',description:'Example:Ansivita uyarlaması için programda quality leveli R seçin. ' },
 
 
 
-        { field: 'mtbf_value', headerName: 'MTBF Value', width: 150,headerAlign:'center',editable:role!=='casual', description:'Number is expected for this field. Number might reach up high values. Example:2000000000'},
+        { field: 'mtbf_value', headerName: 'MTBF Value', width: 150,headerAlign:'center',editable:role ==='admin', description:'Number is expected for this field. Number might reach up high values. Example:2000000000'},
 
         {
           field: 'condition_environment_info',
@@ -693,7 +696,7 @@ const downloadFile = (partNumber, fileType) => {
             'Missile, Launch (ML)',
             'Cannon, Launch (CL)',
           ],
-          editable: role!=='casual',
+          editable:role ==='admin',
           renderCell: ({ value }) => (
             <Box
               sx={{
@@ -712,19 +715,19 @@ const downloadFile = (partNumber, fileType) => {
         
         
         
-        { field: 'condition_confidence_level', headerName: 'Condition Confidence Level', width: 220 ,headerAlign:'center', editable:  role!=='casual', description:'Number is expected for this field. Example:90'},
-        { field: 'condition_temperature_value', headerName: 'Condition Temperature Value', width: 240,headerAlign:'center', editable: role!=='casual', description:'Number is expected for this field. Example:30' },
-        { field: 'finishing_material', headerName: 'Finishing Material', width: 180,headerAlign:'center', editable: role!=='casual', description:'Text is expected for this field. Example:Matte Sn' },
+        { field: 'condition_confidence_level', headerName: 'Condition Confidence Level', width: 220 ,headerAlign:'center', editable:role ==='admin', description:'Number is expected for this field. Example:90'},
+        { field: 'condition_temperature_value', headerName: 'Condition Temperature Value', width: 240,headerAlign:'center', editable:role ==='admin', description:'Number is expected for this field. Example:30' },
+        { field: 'finishing_material', headerName: 'Finishing Material', width: 180,headerAlign:'center', editable:role ==='admin', description:'Text is expected for this field. Example:Matte Sn' },
       
       
-        { field: 'mtbf', headerName: 'MTBF', width: 120 ,headerAlign:'center', editable: role!=='casual', description:'Number is expected for this field. Example:2000000000'},
-        { field: 'failure_rate', headerName: 'Failure Rate', width: 150 ,headerAlign:'center', editable: role!=='casual', description:'Number with a decimal is expected for this field. Example:0.000000025380'},
+        { field: 'mtbf', headerName: 'MTBF', width: 120 ,headerAlign:'center', editable:role ==='admin', description:'Number is expected for this field. Example:2000000000'},
+        { field: 'failure_rate', headerName: 'Failure Rate', width: 150 ,headerAlign:'center', editable:role ==='admin', description:'Number with a decimal is expected for this field. Example:0.000000025380'},
         { field: 'failure_rate_type', headerName: 'Failure Rate Type', width: 180 ,headerAlign:'center',editable:false, description:'This field is not editable. Its value is decided according to the value of the MTBF field.'},
       
       
-        { field: 'failure_mode', headerName: 'Failure Mode', width: 300,headerAlign:'center', editable: role!=='casual', ...multilineColumn ,description:'Text is expected for this field. Example:Open, Short, etc.'},
-        { field: 'failure_cause', headerName: 'Failure Cause', width: 400 ,headerAlign:'center', editable: role!=='casual',...multilineColumn, description:'Text is expected for this field. Example:High Voltage Transients, High temperature, whisker, Mechanical Stress, Contamination, etc.'},
-        { field: 'failure_mode_ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable: role!=='casual', ...multilineColumn, description:'A value between 0 and 1 is expected for this field. Example:0.29'},
+        { field: 'failure_mode', headerName: 'Failure Mode', width: 300,headerAlign:'center', editable:role ==='admin', ...multilineColumn ,description:'Text is expected for this field. Example:Open, Short, etc.'},
+        { field: 'failure_cause', headerName: 'Failure Cause', width: 400 ,headerAlign:'center', editable:role ==='admin',...multilineColumn, description:'Text is expected for this field. Example:High Voltage Transients, High temperature, whisker, Mechanical Stress, Contamination, etc.'},
+        { field: 'failure_mode_ratio', headerName: 'Failure Mode Ratio', width: 180 ,headerAlign:'center', editable:role ==='admin', ...multilineColumn, description:'A value between 0 and 1 is expected for this field. Example:0.29'},
         {
           field: 'related_documents',
           headerName: 'Related Documents',
@@ -735,8 +738,8 @@ const downloadFile = (partNumber, fileType) => {
           renderCell: (params) => {
               return (
                   <div>
-                      {role!== 'casual' && (
-                      <>
+                    {role ==='admin' && (
+                    <>   
                       <input
                           type="file"
                           onChange={(event) => handleFileChange(event, params, 'related_documents')}
@@ -744,9 +747,7 @@ const downloadFile = (partNumber, fileType) => {
                           accept=".pdf"
                       />
                       </>
-                      )}
-                      {role !== 'casual' && (
-                      <>
+                    )}
                         <Button style={{backgroundColor:'#005c5a'}}
                             variant="contained"
                             color="primary"
@@ -755,8 +756,7 @@ const downloadFile = (partNumber, fileType) => {
                         >
                         <FileDownloadIcon style={{color:'#d3d3d3'}}/>
                         </Button>
-                      </>
-                      )}
+                      
                   </div>
               );
           },
@@ -771,23 +771,17 @@ const downloadFile = (partNumber, fileType) => {
         disableExport: true,
         width: 150,
         renderCell: (params) => (
-        
-          
           <Button
             variant="contained"
             color="primary"
             size="small"
-            disabled={role ==='casual'}
             onClick={() => saveRow(params.row)}
-           
-          style={{color:'white',backgroundColor:'#35495e',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+            style={{color:'white',backgroundColor:'#35495e',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+            disabled={role !== 'admin'}
           >
-          <SaveIcon />
-          
+            <SaveIcon />
           </Button>
-       
         ),
-        
       },
       {
         field:'delete',
@@ -803,8 +797,8 @@ const downloadFile = (partNumber, fileType) => {
             color="secondary"
             size="small"
             onClick={() => deleteRow(params.row)}
-            disabled={role ==='casual'}
             style={{color:'white',backgroundColor:'#6b1c23',fontFamily:"'Montserrat', sans-serif", margin:'auto'}}
+            disabled={role !== 'admin'}
           >
             <DeleteIcon style={{color:''}} />
           </Button>
@@ -819,7 +813,8 @@ const downloadFile = (partNumber, fileType) => {
   return (
     <div>
       <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-        {role !== 'casual' && (
+        
+        {role === 'admin' && (
           <>
             <Button variant="contained" onClick={addRow} sx={{color:'white',backgroundColor:'#2ab39e',fontFamily:"'Montserrat', sans-serif", marginLeft:'5px', fontSize:'14px', '&:hover': { backgroundColor:'#007d8d'} }}>
               Add Row
@@ -829,16 +824,17 @@ const downloadFile = (partNumber, fileType) => {
             </Button>
           </>
         )}
-        {role !== 'casual' && (
-          <>
+        {role === 'admin' && (
+        <>
         <Paper elevation={1}  sx={{ marginLeft: '15px', marginRight: '15px', height: '40px', width: '2px', backgroundColor:'#ff6473'}} />
         </>
         )}
-        {role !== 'casual' && (
+        {role === 'admin' && (
           <Button variant="contained" onClick={importData} sx={{color:'white', backgroundColor:'#495867', fontFamily:"'Montserrat', sans-serif", marginLeft:'15px'}}>
             Import
           </Button>
         )}
+        
       </Box>
       
   
@@ -854,7 +850,7 @@ const downloadFile = (partNumber, fileType) => {
           }}
           slotProps={{
             toolbar: {
-                role:role,
+                
                 onFilterChange: (newFilter) => {
                   // Call your search function here
                   search(newFilter);

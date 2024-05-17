@@ -1,8 +1,10 @@
-from flask import Flask,jsonify,request,send_file, Response
-import psycopg2
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from werkzeug.security import check_password_hash, generate_password_hash
+import psycopg2
 import base64
-from flask import send_file
+from flask import Response
 from io import BytesIO
 import pandas as pd
 
@@ -14,9 +16,99 @@ password = 'timberlaker.67'
 host = 'localhost'  
 port = '5432'  
 app = Flask(__name__)
+app.secret_key = '4a3d610adc0bf794a02972131ba9a23a'
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
 
+login_manager = LoginManager()
+login_manager.init_app(app)
 
+
+# User model
+class User(UserMixin):
+    def __init__(self, id, email, password_hash, role):
+        self.id = id
+        self.email = email
+        self.password_hash = password_hash
+        self.role = role
+
+@login_manager.user_loader
+def load_user(user_id):
+    conn = psycopg2.connect(
+            dbname='Failures',
+            user='postgres',
+            password='timberlaker.67',
+            host='localhost',
+            port='5432'
+        )
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if user:
+        return User(user[0], user[1], user[2], user[3])
+    return None
+
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    role='casual'
+    password_hash = generate_password_hash(password)
+
+    conn = psycopg2.connect(
+            dbname='Failures',
+            user='postgres',
+            password='timberlaker.67',
+            host='localhost',
+            port='5432'
+        )
+    cursor = conn.cursor()
+
+    cursor.execute("INSERT INTO users (email, password_hash, role) VALUES (%s, %s, %s)", (email, password_hash, role))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({'status': 'success'})
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    conn = psycopg2.connect(
+            dbname='Failures',
+            user='postgres',
+            password='timberlaker.67',
+            host='localhost',
+            port='5432'
+        )
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if user and check_password_hash(user[2], password):
+        login_user(User(user[0], user[1], user[2], user[3]))
+        return jsonify({'status': 'success', 'role': user[3]})
+
+    return jsonify({'status': 'Invalid email or password'})
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'status': 'Logged out'})
 
 # backend flask side to get data from the database and send it to the frontend react side
 @app.route('/get_data_from_database', methods=['GET'])
@@ -423,7 +515,7 @@ def import_data():
         df.columns = df.columns.str.strip()
 
         # Validate the data: check that all fields are present
-        fields = ['part_name', 'part_number', 'bilgem_part_number', 'manufacturer', 'description', 'stock_information', 'category', 'subcategory', 'subcategory_type', 'remarks', 'mtbf_value', 'condition_environment_info', 'condition_confidence_level', 'condition_temperature_value', 'finishing_material', 'mtbf', 'failure_rate', 'failure_rate_type', 'failure_mode', 'failure_cause', 'failure_mode_ratio']
+        fields = ['part_name', 'part_number', 'bilgem_part_number', 'manufacturer', 'description', 'stock_information', 'category', 'subcategory', 'subcategory_type', 'remarks', 'mtbf_value', 'condition_environment_info', 'condition_confidence_level', 'condition_temperature_value', 'finishing_material', 'failure_rate_type', 'failure_mode', 'failure_cause', 'failure_mode_ratio']
         if not all(field in df.columns for field in fields):
             return jsonify({'error': 'Missing data'}), 400
 
@@ -470,8 +562,7 @@ def import_data():
             VALUES (%s, %s, %s, %s)
             """, (row['part_number'], row['failure_mode'], row['failure_cause'], row['failure_mode_ratio']))
 
-            # Insert the new row into the database
-            # Add similar insert statements for other tables...
+            
         
                                
         conn.commit()

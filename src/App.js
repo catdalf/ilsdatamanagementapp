@@ -2,52 +2,62 @@ import React, { useState } from 'react';
 import DataTable from './components/datatable'; 
 import Sidebar from './components/sidebar'; 
 import Home from './components/home'; 
-import SignIn from './components/signin'; 
+import Login from './components/login';
+import { UserProvider } from './UserContext';
+import Signup from './components/signup'; 
 import './tailwind.css';
 import './styles.css';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import PrivateRouteWrapper from './components/PrivateRoute'; 
-import RoleContext from './RoleContext'; 
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('Home');
-  const [role, setRole] = useState(null); // add a new state variable for the role
+  const [currentPage, setCurrentPage] = useState('Login');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
 
   const handleSidebarItemClick = (page) => {
     setCurrentPage(page);
   };
 
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    setCurrentPage('Home');
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentPage('Login');
+  };
+
   const renderPage = () => {
-    switch (currentPage) {
-      case 'Home':
-        return <Home />;
-      case 'Data Table':
-        return <DataTable />;
-      default:
-        return <Home />;
+    if (!isLoggedIn) {
+      switch (currentPage) {
+        case 'Login':
+          return <Login onLogin={handleLogin} onNavigateToSignup={() => setCurrentPage('Signup')} />;
+        case 'Signup':
+          return <Signup onNavigateToLogin={() => setCurrentPage('Login')} />;
+        default:
+          return <Login onLogin={handleLogin} onNavigateToSignup={() => setCurrentPage('Signup')} />;
+      }
+    } else {
+      switch (currentPage) {
+        case 'Home':
+          return <Home />;
+        case 'Data Table':
+          return <DataTable />;
+        default:
+          return <Home />;
+      }
     }
   };
 
   return (
-    <RoleContext.Provider value={{ role, setRole }}> {/* wrap your app in the provider */}
-      <Router>
-        <div className="App">
-          <Sidebar handleSidebarItemClick={handleSidebarItemClick} />
-          <div className="content">
-            <Routes>
-            <Route path="/signin" element={<SignIn setRole={setRole} />} />
-              <Route path="/home" element={
-                <PrivateRouteWrapper>
-                  {renderPage()}
-                </PrivateRouteWrapper>
-              } />
-              <Route path="/" element={<Navigate to="/signin" />} />
-              <Route path="*" element={<div>404 Not Found</div>} />
-            </Routes>
-          </div>
-        </div>
-      </Router>
-    </RoleContext.Provider>
+  <UserProvider>
+    <div className="App">
+      {isLoggedIn && <Sidebar handleSidebarItemClick={handleSidebarItemClick} />}
+      <div className="content">
+        {renderPage()}
+      </div>
+    </div>
+  </UserProvider>
   );
 }
 

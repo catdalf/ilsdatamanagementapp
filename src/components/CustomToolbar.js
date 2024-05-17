@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext} from 'react';
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import axios from 'axios';
@@ -9,13 +9,15 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import * as XLSX from 'xlsx';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import UserContext from '../UserContext';
 
 function CustomToolbar(props) {
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
   const fileInputRefMTBF = useRef(null);
   const fileInputRefFMECA = useRef(null);
-  const {role} = props;
+  const [role] = useContext(UserContext);
+  
 
   useEffect(() => {
     let active = true;
@@ -166,11 +168,14 @@ function CustomToolbar(props) {
       <Box sx={{ display: 'flex', gap: 2 }}>
         <GridToolbarColumnsButton/>
         <GridToolbarDensitySelector />
+
+        {role === 'admin' && (
+        <>
         <Button 
           startIcon={<UploadFileIcon />} 
           onClick={handleExportFMECAClick} 
           sx={{ fontSize: '0.8rem' }}
-          disabled={props.role === 'casual'}
+          
         >
           Upload BOM for Exporting FMECA Studies Excel File
         </Button>
@@ -180,13 +185,13 @@ function CustomToolbar(props) {
           style={{ display: 'none' }}
           accept=".xlsx,.xls"
           onChange={handleFMECAFileUpload}
-          disabled={props.role === 'casual'}
+          
         />
         <Button 
           startIcon={<UploadFileIcon />} 
           onClick={handleValidateAndExportMTBFClick} 
           sx={{ fontSize: '0.8rem' }}
-          disabled={props.role === 'casual'}
+          
         >
           Upload BOM for Exporting MTBF Calculations Excel File
         </Button>
@@ -196,8 +201,10 @@ function CustomToolbar(props) {
           style={{ display: 'none' }}
           accept=".xlsx,.xls"
           onChange={handleMTBFFileUpload}
-          disabled={props.role === 'casual'}
+          
         />
+        </>
+        )}
       </Box>
       <Autocomplete
         noOptionsText={`No matching values.

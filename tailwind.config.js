@@ -1,11 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/components/sidebar.js',
-    'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/components/home.js',
-    'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/components/datatable.js',
-    'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/App.js',
-    'C:/Users/eren.buldum/Desktop/bilgemilsapplication/ils-data-management-app/src/styles.css',
+    './src/components/sidebar.js',
+    './src/components/home.js',
+    './src/components/datatable.js',
+    './src/App.js',
+    './src/styles.css',
     
     
   ],

@@ -1,26 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase';
+import React from 'react';
 import { Card, CardContent, Typography, Grid, Box } from '@mui/material';
 
 function Home() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  const displayName = user.displayName || user.email.split('@')[0];
 
   return (
     <Box
@@ -33,7 +14,7 @@ function Home() {
         fontFamily:"'Montserrat', sans-serif", // use the Montserrat font
       }}
     >
-      <h2>Welcome, {displayName}!</h2>
+      <h2>Welcome</h2>
       <Grid container spacing={3}>
         <Grid item xs={12} sm={6} md={4}>
           <Card
@@ -88,6 +69,6 @@ function Home() {
       </Grid>
     </Box>
   );
-}
+};
 
 export default Home;
